@@ -12,7 +12,7 @@ from datetime import datetime
 from emojimon import Emoji, move, Trainer
 import json
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.uRawyzMyK3wS65ey99qhK0H-w0o'
+TOKEN = ''
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
