@@ -122,6 +122,13 @@ class Emoji:
         self.speedStat = int(self.level * self.speGain * self.speGene)
 
     def add_xp(self, exp, battle: bool, win: bool):
+        """
+        Does exactly what it says in the name
+        :param exp: How much exp will be added
+        :param battle: Was it battling
+        :param win: If it was battling, did it win?
+        :return:
+        """
         self.xp[0] += exp
         if self.xp[0] >= self.xp[1]:
             while True:
@@ -131,11 +138,11 @@ class Emoji:
                     break
             return f'{self.name} has leveled up to level {self.level}!'
         if not battle:
-            return None
+            return f'{self.name} has gained {exp} XP'
         if win:
             return f'{self.name} has won the fight and escaped PTSD, *for now*'
         else:
-            return f'{self.name} has gained XP'
+            return f'{self.name} has gained {exp} XP'
 
     def level_up(self):
         """
