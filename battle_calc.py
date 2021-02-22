@@ -32,11 +32,11 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     hitType = ""
     effective = ''
     if typeEffectiveness >= 2.5:
-        effective = "super effective"
+        effective = "was super effective"
     elif typeEffectiveness >= 1:
-        effective = "effective"
+        effective = "was effective"
     else:
-        effective = "not very effective"
+        effective = "was not very effective"
 
     universalDamageMod = 1.2
 
@@ -56,7 +56,7 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
 
     if hit > moveAcc:
         print("WHIFF!")
-        return 'very far off, you should try prescription glasses', 0
+        return 'very far off, you should try prescription glasses', 0, 0, False
 
     if attackingEmoji.speedStat < 210:
         damageSway = random.uniform(0.8, 1.2)
@@ -65,10 +65,57 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
 
     if hitType == "Physical":
         return effective, int((((moveDam * (
-                attackingEmoji.atkStat / defendingEmoji.defStat)) ** universalDamageMod) / 5) * typeEffectiveness * stabMod * damageSway)
+                attackingEmoji.atkStat / defendingEmoji.defStat)) ** universalDamageMod) / 5) * typeEffectiveness * stabMod * damageSway), 0, False
     else:
         return effective, int((((moveDam * (
-                attackingEmoji.specialAtkStat / defendingEmoji.specialDefStat)) ** universalDamageMod) / 5) * typeEffectiveness * stabMod * damageSway)
+                attackingEmoji.specialAtkStat / defendingEmoji.specialDefStat)) ** universalDamageMod) / 5) * typeEffectiveness * stabMod * damageSway), 0, False
+
+
+def heal_calc(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
+    """
+    Heal the emoji and may deal some damage to the other emoji
+    :param attackingEmoji:
+    :param defendingEmoji:
+    :param movesName:
+    :return: message, how much it heals, how much damage, and whether the move will be disabled
+    """
+    global moveListTemp
+    moveType = ""
+    moveDam = 0
+    moveAcc = 0.0
+    healType = ''
+    for x in range(len(moveListTemp)):
+        if movesName == moveListTemp[x].moveName:
+            moveType = moveListTemp[x].moveType
+            moveDam = moveListTemp[x].movePower
+            moveAcc = moveListTemp[x].moveAccuracy
+            healType = moveListTemp[x].moveHitType[1]
+    if healType is '1':  # Heal based on movePower alone
+        heal = random.uniform(0.0, moveDam/100)*0.2*attackingEmoji.maxHp
+        msg = f'healed {attackingEmoji.name} by {heal} hp'
+        return msg, 0, heal, False
+    if healType is '2':  # Like 1 but heals up to 50% and can only be used once
+        heal = random.uniform(0.0, moveDam / 100) * 0.5 * attackingEmoji.maxHp
+        msg = f'healed {attackingEmoji.name} by {heal} hp and disabled itself'
+        return msg, 0, heal, True
+    if healType is '3':  # Like 1 but only heals 10% max and also damages opponents by half of what it should be
+        heal = random.uniform(0.0, moveDam / 100) * 0.1 * attackingEmoji.maxHp
+        dmg = damage_calculation(attackingEmoji, defendingEmoji, movesName)/2
+        msg = f'healed {attackingEmoji.name} by {heal} hp'
+        return msg, dmg, heal, False
+    if healType is '4':  # Gamble, either heal a flat rate of 50% (once) or get damaged based on what it would be by def
+        heal = random.choice([0.5*attackingEmoji.maxHp, 0])
+        if heal != 0:
+            msg = f'healed {attackingEmoji.name} by {heal} hp and disabled itself'
+            return msg, 0, heal, True
+        else:
+            dmg = damage_calculation(defendingEmoji, attackingEmoji, movesName)
+            msg = f'failed to heal {attackingEmoji.name} and killed his dignity instead, reduced its health by {dmg}'
+            return msg, 0, -dmg, False
+    if healType is '5':  # For now it's like 1
+        heal = random.uniform(0.0, moveDam / 100) * 0.2 * attackingEmoji.maxHp
+        msg = f'healed {attackingEmoji.name} by {heal} hp'
+        return msg, 0, heal, False
 
 
 if __name__ == '__main__':
