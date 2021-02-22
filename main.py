@@ -5,14 +5,14 @@ from discord.utils import get
 import asyncio
 import random
 from image_edit import guess_poke, battle_screen
-from battle_calc import damage_calculation
+from battle_calc import damage_calculation, heal_calc
 import pickle
 import os
 from datetime import datetime
 from emojimon import Emoji, move, Trainer
 import json
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.holySZ7O6NoI-BlZkqaIYhJvZPw'
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.dg_eX083mMvUqU2XGErEzHX6Wn4'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -128,7 +128,33 @@ async def new_trainer(ctx):
 
 
 @client.command()
-async def learn_move(ctx):
+async def check_move(ctx, emoji_name=""):
+    global trainer_list
+    global trainer_id_list
+
+    trainer_id_list = [i.id for i in trainer_list]  # Updates trainer_id_list
+    try:
+        trainer = trainer_list[trainer_id_list.index(ctx.author.id)]
+    except KeyError:
+        await ctx.send("Sorry, you're not part of a club yet.\n "
+                        "||But now you will, this is a forced initiation sucka||")
+        await trainer_init(ctx, ctx.author)
+
+    while True:
+        team = ', '.join([str(i) for i in trainer.team])
+        while True:
+            msg = await ctx.author.send(f"Which emoji do you want to teach: {team}")
+            index = await select_one_from_list(ctx.author, ctx.author, [0, 1, 2, 3], selection_message=msg)
+            if trainer.team[index] is None:
+                await ctx.author.send("Whatever you're smokin, I want some of that. Try again")
+            else:
+                break
+
+        await ctx.author.send(trainer.team[index].move_stat())
+
+
+@client.command()
+async def learn_move(ctx, emoji_name=""):
     global trainer_list
     global trainer_id_list
 
@@ -145,8 +171,8 @@ async def learn_move(ctx):
                 break
 
         msg = await ctx.author.send("Choose the move you want to learn. "
-                              "Learned moves cannot be learned a second time, so choose wisely\n"
-                              "No pressure")
+                                    "Learned moves cannot be learned a second time, so choose wisely\n"
+                                    "No pressure")
         await asyncio.sleep(1)
         await msg.delete()
         answer = await select_one_from_list(ctx.author, ctx.author, trainer.team[index].movePool)
@@ -308,6 +334,8 @@ async def battle_challenge(ctx, target):
     responses = ["yes", "no"]
 
     if ctx.author.id not in trainer_id_list:
+        await ctx.send("Sorry, you're not part of a club yet.\n "
+                       "||But now you will, this is a forced initiation sucka||")
         await trainer_init(ctx, ctx.author)
 
     try:
@@ -321,6 +349,8 @@ async def battle_challenge(ctx, target):
         return
 
     if user.id not in trainer_id_list:
+        await ctx.send("Sorry, you're not part of a club yet.\n "
+                       "||But now you will, this is a forced initiation sucka||")
         await trainer_init(ctx, user)
 
     await ctx.send(f"{ctx.author.name} has challenged {user.name} to a battle.")
@@ -398,17 +428,31 @@ async def battle(ctx, challenger, challenged):
     challenged_moves = \
         [challenged_emoji.move1, challenged_emoji.move2, challenged_emoji.move3, challenged_emoji.move4]
 
+    # Damage modifier from effect:
+    clrMod = 1
+    cldMod = 1
+
+    """
+    calc will always have the format: message, damage, heal, and whether the move is one time only
+    """
     while True:
         move_chosen = await select_one_from_list(ctx, challenger_user, challenger_moves)
         msg = await ctx.send(f"{challenger_emoji.name} used {move_chosen}")
-        image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
-        calc = damage_calculation(challenger_emoji, challenged_emoji, move_chosen)
-        challenged_hp -= calc[1]  # This is the damage dealt
-
+        # Type check:
+        if move_chosen.moveEffect[0] is not "H":  # Normal attack
+            image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
+            calc = clrMod*damage_calculation(challenger_emoji, challenged_emoji, move_chosen)
+            challenged_hp -= calc[1]  # This is the damage dealt
+        elif move_chosen.moveEffect[0] is "H":  # Healing attack
+            calc = heal_calc(challenger_emoji, challenged_emoji, move_chosen)
+            challenger_hp += calc[2]
+            challenged_hp -= calc[1]
+        if calc[3]:
+            challenger_moves.remove(move_chosen)
         await asyncio.sleep(3)
         await msg.delete()
         msg = await ctx.send(
-            f"The move was {calc[0]}, dealt {calc[1]} damage. {challenged_emoji.name} has {challenged_hp} hp left"
+            f"The move {calc[0]}, dealt {calc[2]} damage. {challenged_emoji.name} has {challenged_hp} hp left"
         )
         if challenged_hp <= 0:  # Challenger win condition
             await ctx.send(f'{challenged_emoji.name} has fallen into depression')
@@ -468,9 +512,19 @@ async def battle(ctx, challenger, challenged):
         move_chosen = await select_one_from_list(ctx, challenged_user, challenged_moves)
         msg = await ctx.send(f"{challenged_emoji.name} used {move_chosen}")
         # No need for a second move_chosen cuz it's turn_based anyways
-        image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "knife2"), filename='Image.jpeg'))
-        calc = damage_calculation(challenged_emoji, challenger_emoji, move_chosen)
-        challenger_hp -= calc[1]
+
+        # Type check:
+        if move_chosen.moveEffect[0] is not "H":  # Normal attack for now
+            image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "knife2"), filename='Image.jpeg'))
+            calc = cldMod * damage_calculation(challenged_emoji, challenger_emoji, move_chosen)
+            challenger_hp -= calc[1]
+        elif move_chosen.moveEffect[0] is "H":  # Healing attack
+            calc = heal_calc(challenged_emoji, challenger_emoji, move_chosen)
+            challenged_hp += calc[2]
+            challenger_hp -= calc[1]
+        if calc[3]:
+            challenger_moves.remove(move_chosen)
+
         await asyncio.sleep(3)
         msg = await ctx.send(
             f"The move was {calc[0]}, dealt {calc[1]} damage. {challenger_emoji.name} has {challenger_hp} hp left"

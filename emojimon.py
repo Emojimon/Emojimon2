@@ -14,6 +14,18 @@ class move:
     moveEffect = ""
     moveHitType = ""
 
+    def __str__(self):
+        return self.moveName
+
+    def stats(self):
+        if self.moveName is None:
+            return
+        return f"{self.moveName}'s stats:\n" \
+               f"Type: {self.moveType}\n" \
+               f"Power: {self.movePower}\n" \
+               f"Accuracy: {self.moveAccuracy}\n" \
+               f"{self.moveHitType} {self.moveEffect} move\n"
+
 
 class Emoji:
     # basic information
@@ -107,7 +119,7 @@ class Emoji:
         self.moveLearnDictionary = {}
         self.movePool = []
 
-        self.xp = [0, int(self.level**1.2)]
+        self.xp = [0, int(self.level ** 1.2)]
 
     def __str__(self):
         return self.name
@@ -133,7 +145,7 @@ class Emoji:
         if self.xp[0] >= self.xp[1]:
             while True:
                 self.level_up()
-                self.xp = [self.xp[0] - self.xp[1], int(self.level**1.2)]
+                self.xp = [self.xp[0] - self.xp[1], int(self.level ** 1.2)]
                 if self.xp[0] < self.xp[1]:
                     break
             return f'{self.name} has leveled up to level {self.level}!'
@@ -172,9 +184,9 @@ class Emoji:
         N = len(categories)
 
         # we need to repeat the first value to close the circular graph:
-        values = [self.maxHp/10, self.atkStat/10, self.defStat/10,
-                  self.specialAtkStat/10, self.specialDefStat/10, self.speedStat*40/350,
-                  self.dodgeChance*40/5, self.maxHp/10]
+        values = [self.maxHp / 10, self.atkStat / 10, self.defStat / 10,
+                  self.specialAtkStat / 10, self.specialDefStat / 10, self.speedStat * 40 / 350,
+                  self.dodgeChance * 40 / 5, self.maxHp / 10]
 
         # What will be the angle of each axis in the plot? (we divide the plot / number of variable)
         angles = [n / float(N) * 2 * pi for n in range(N)]
@@ -213,6 +225,24 @@ class Emoji:
         b.seek(0)
         return b
 
+    def move_list(self):
+        return self.move1, self.move2, self.move3, self.move4
+
+    def move_stat(self):
+        """
+        Return move stats
+        """
+        msg = ''
+        with open("CompleteMoveList.dat", "rb") as f:
+            moveListTemp = pickle.load(f)
+
+        for i in self.move_list():
+            for em_move in moveListTemp:
+                if em_move.moveName == i.moveName:
+                    msg += em_move.stats()
+
+        return msg
+
 
 class Trainer:
     """
@@ -220,6 +250,7 @@ class Trainer:
     It also makes things cleaner
     todo: Integrate discord user in here
     """
+
     def __init__(self, name, discord_id: int, beginner_emoji: Emoji, date_started: str):
         """
         The Trainer class constructor
