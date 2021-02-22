@@ -238,8 +238,10 @@ class Emoji:
 
         for i in self.move_list():
             for em_move in moveListTemp:
-                if em_move.moveName == i.moveName:
+                if em_move.moveName == i:
                     msg += em_move.stats()
+
+            msg += "\n"
 
         return msg
 
