@@ -52,13 +52,16 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     if moveType == attackingEmoji.type:
         stabMod = 1.2
 
-    hit = random.uniform(0.0, 1.0)
+    hit = random.uniform(0.0, 1.0) + defendingEmoji.dodgeChance/25
 
     if hit > moveAcc:
         print("WHIFF!")
         return 'very far off, you should try prescription glasses', 0
 
-    damageSway = random.uniform(0.8, 1.2)
+    if attackingEmoji.speedStat < 210:
+        damageSway = random.uniform(0.8, 1.2)
+    else:
+        damageSway = random.uniform(0.7, attackingEmoji.speedStat/175)
 
     if hitType == "Physical":
         return effective, int((((moveDam * (
