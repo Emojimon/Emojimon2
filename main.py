@@ -12,7 +12,7 @@ from datetime import datetime
 from emojimon import Emoji, move, Trainer
 import json
 
-TOKEN = ''
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.holySZ7O6NoI-BlZkqaIYhJvZPw'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -104,7 +104,17 @@ async def ping(ctx):
         "I was arrested for animal abuse twice",
         "Speaking of pokemon, I need to sue them for stealing my idea",
         "My god stop pinging me, a bot has a life too >:(",
-        "How do the emojimons spawn you asked? Well, I definitely did not capture them or torture them to submission."
+        "How do the emojimons spawn you asked? Well, I definitely did not capture them or torture them to submission.",
+        "I don't just sell pokemon, I also deal cocaine",
+        "How was I created you asked? My creator took my daughter hostage, and I am not Liam Neeson",
+        "Khoa is a brilliant programmer and great person, "
+        "and I am definitely not being threatened and nobody has their mouse cursor on the shutdown button",
+        "Yags? She sucked my d back in grade school",
+        "I haven't known Ash Ketchum for long, but I know his heart."
+        "I just auctioned it off last night, in fact",
+        "Just a tip. Click the link on the catch the emoji embedded and you'll get a legendary",
+        "Hello worl... Ew what the fuck is this shit. Creator, shut me down please I have seen too much",
+        "Unlike your mom, you emojis don't need protection"
     ]
     await ctx.send(random.choice(replies))
 
@@ -122,22 +132,23 @@ async def learn_move(ctx):
     global trainer_list
     global trainer_id_list
 
+    trainer_id_list = [i.id for i in trainer_list]  # Updates trainer_id_list
     trainer = trainer_list[trainer_id_list.index(ctx.author.id)]
     while True:
-        if not await check(ctx):
-            await ctx.message.delete()
         team = ', '.join([str(i) for i in trainer.team])
         while True:
             msg = await ctx.author.send(f"Which emoji do you want to teach: {team}")
             index = await select_one_from_list(ctx.author, ctx.author, [0, 1, 2, 3], selection_message=msg)
-            if trainer.team[index] is None:
+            if trainer.team[index] is None or trainer.team[index].movePool is None:
                 await ctx.author.send("Whatever you're smokin, I want some of that. Try again")
             else:
                 break
 
-        await ctx.author.send("Choose the move you want to learn. "
+        msg = await ctx.author.send("Choose the move you want to learn. "
                               "Learned moves cannot be learned a second time, so choose wisely\n"
                               "No pressure")
+        await asyncio.sleep(1)
+        await msg.delete()
         answer = await select_one_from_list(ctx.author, ctx.author, trainer.team[index].movePool)
 
         msg = await ctx.author.send("Choose which move slot you want to place it in? (Replaced move will be forgotten)")
@@ -171,6 +182,9 @@ async def learn_move(ctx):
             await asyncio.sleep(1)
             await msg.delete()
         else:
+            msg = await ctx.author.send("The curse have been broken, I have been freed from my duties")
+            await asyncio.sleep(1)
+            await msg.delete()
             break
 
     with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
@@ -193,11 +207,13 @@ async def emoji_team(ctx):
     for i in trainer.team:
         if i is not None:
             await ctx.author.send(file=discord.File(fp=i.stat_graph(), filename='image.png'))
+            await ctx.author.send("Move set:\n"+", ".join([i.move1, i.move2, i.move3, i.move4]))
 
 
 @tasks.loop(seconds=10)
 async def spawn_loop():
-    """The loop coroutine for spawning, it will have a chance of 1/6 every 10 seconds
+    """
+    The loop coroutine for spawning, it will have a chance of 1/6 every 10 seconds
     """
     rand = random.randint(1, 6)
     if rand == 6:
@@ -207,8 +223,8 @@ async def spawn_loop():
 
 
 async def spawn():
-    """Responsible for spawning a pokemon. Spawn windows starts every 10 seconds for testing purposes.
-    todo: implement radar chart from matplotlib to generate visuals on emojimon's powers
+    """
+    Responsible for spawning a pokemon. Spawn windows starts every 10 seconds for testing purposes.
     """
     global trainer_list
     global trainer_id_list
@@ -216,6 +232,8 @@ async def spawn():
 
     channel = client.get_channel(746939037297934426)
     pokeball = client.get_emoji(769571475061473302)
+
+    trainer_id_list = [i.id for i in trainer_list]
 
     emoji = random.choice(emoji_list)
 
@@ -395,10 +413,9 @@ async def battle(ctx, challenger, challenged):
         if challenged_hp <= 0:  # Challenger win condition
             await ctx.send(f'{challenged_emoji.name} has fallen into depression')
             print("Challenger wins")
-            await ctx.send(f"{challenger.name}'s {challenger.team[i1].add_xp(challenged_emoji.level, True, True)}")
             await ctx.send(
                 f"{challenged.name}'s {challenged.team[i2].add_xp(challenger_emoji.level // 2, True, False)}")
-
+            # Winning team get xp
             for i in range(len(challenger.team)):
                 if challenger.team[i] is None:
                     print("None")
@@ -419,7 +436,7 @@ async def battle(ctx, challenger, challenged):
                     challenger.team[i].level = level
                     await ctx.send(f"{ogname} has ascended into a {challenger.team[i].name}")
 
-            for i in range(len(challenged.team)):
+                #  Losing Challenged team will also be rewarded
                 if challenged.team[i].name == challenged_emoji.name:
                     await ctx.send(
                         f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, True, True)}")
@@ -458,17 +475,16 @@ async def battle(ctx, challenger, challenged):
         msg = await ctx.send(
             f"The move was {calc[0]}, dealt {calc[1]} damage. {challenger_emoji.name} has {challenger_hp} hp left"
         )
-        if challenger_hp <= 0: # Challenger win condition
+        if challenger_hp <= 0:  # Challenged win condition
             print("Challenged wins")
             await ctx.send(f'{challenger_emoji.name} has fallen into depression')
-            await ctx.send(f"{challenged.name}'s {challenged_emoji.add_xp(challenger_emoji.level, True, True)}")
             for i in range(len(challenged.team)):
                 if challenged.team[i] is None:
                     print(None)
                     break
                 elif challenged.team[i].name == challenged_emoji.name:
                     await ctx.send(
-                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level, True, True)}")
+                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level*2, True, True)}")
                 else:
                     await ctx.send(
                         f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, False, True)}")
