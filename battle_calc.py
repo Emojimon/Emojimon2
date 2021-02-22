@@ -9,6 +9,20 @@ with open("TypeChart2dArray.dat", "rb") as f:
     newData = pickle.load(f)
 
 
+def effect_check(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
+    global moveListTemp
+    effectType = ''
+
+    for x in range(len(moveListTemp)):
+        if movesName == moveListTemp[x].moveName:
+            effectType = moveListTemp[x].moveEffect[0]
+
+    if effectType == "K" or effectType == "H":
+        return heal_calc(attackingEmoji, defendingEmoji, movesName)
+    else:
+        return damage_calculation(attackingEmoji, defendingEmoji, movesName)
+
+
 def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     """
     Calculate damage for a battle
@@ -86,40 +100,40 @@ def heal_calc(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     healType = ''
     for x in range(len(moveListTemp)):
         if movesName == moveListTemp[x].moveName:
-            moveType = moveListTemp[x].moveType
             moveDam = moveListTemp[x].movePower
             moveAcc = moveListTemp[x].moveAccuracy
-            healType = moveListTemp[x].moveHitType[1]
+            healType = moveListTemp[x].moveEffect[1]
+
     if healType is '1':  # Heal based on movePower alone
         heal = random.uniform(0.0, moveDam/100)*0.2*attackingEmoji.maxHp
-        msg = f'healed {attackingEmoji.name} by {heal} hp'
-        return msg, 0, heal, False
+        msg = f'healed {attackingEmoji.name} by {round(heal())} hp'
+        return msg, 0, round(heal()), False
     if healType is '2':  # Like 1 but heals up to 50% and can only be used once
         heal = random.uniform(0.0, moveDam / 100) * 0.5 * attackingEmoji.maxHp
         msg = f'healed {attackingEmoji.name} by {heal} hp and disabled itself'
-        return msg, 0, heal, True
+        return msg, 0, round(heal()), True
     if healType is '3':  # Like 1 but only heals 10% max and also damages opponents by half of what it should be
         heal = random.uniform(0.0, moveDam / 100) * 0.1 * attackingEmoji.maxHp
         dmg = damage_calculation(attackingEmoji, defendingEmoji, movesName)/2
-        msg = f'healed {attackingEmoji.name} by {heal} hp'
-        return msg, dmg, heal, False
+        msg = f'healed {attackingEmoji.name} by {round(heal())} hp'
+        return msg, dmg, round(heal()), False
     if healType is '4':  # Gamble, either heal a flat rate of 50% (once) or get damaged based on what it would be by def
         heal = random.choice([0.5*attackingEmoji.maxHp, 0])
         if heal != 0:
-            msg = f'healed {attackingEmoji.name} by {heal} hp and disabled itself'
-            return msg, 0, heal, True
+            msg = f'healed {attackingEmoji.name} by {round(heal())} hp and disabled itself'
+            return msg, 0, round(heal()), True
         else:
             dmg = damage_calculation(defendingEmoji, attackingEmoji, movesName)
             msg = f'failed to heal {attackingEmoji.name} and killed his dignity instead, reduced its health by {dmg}'
             return msg, 0, -dmg, False
     if healType is '5':  # For now it's like 1
         heal = random.uniform(0.0, moveDam / 100) * 0.2 * attackingEmoji.maxHp
-        msg = f'healed {attackingEmoji.name} by {heal} hp'
-        return msg, 0, heal, False
+        msg = f'healed {attackingEmoji.name} by {round(heal())} hp'
+        return msg, 0, round(heal()), False
 
 
 if __name__ == '__main__':
     with open("CompleteEmojiDex.dat", "rb") as f:
         emoji_list = pickle.load(f)
 
-    print(damage_calculation(emoji_list[1411], emoji_list[1412], 'Legendary Sword')[1])
+    print(effect_check(emoji_list[809], emoji_list[40], "Spoken"))
