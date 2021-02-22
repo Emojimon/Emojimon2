@@ -172,7 +172,7 @@ class Emoji:
         N = len(categories)
 
         # we need to repeat the first value to close the circular graph:
-        values = [self.maxHp/10,self.atkStat/10, self.defStat/10,
+        values = [self.maxHp/10, self.atkStat/10, self.defStat/10,
                   self.specialAtkStat/10, self.specialDefStat/10, self.speedStat*40/350,
                   self.dodgeChance*40/5, self.maxHp/10]
 
