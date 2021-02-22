@@ -5,19 +5,20 @@ from discord.utils import get
 import asyncio
 import random
 from image_edit import guess_poke, battle_screen
-from battle_calc import damage_calculation, heal_calc
+from battle_calc import damage_calculation, heal_calc, effect_check
 import pickle
 import os
 from datetime import datetime
 from emojimon import Emoji, move, Trainer
 import json
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.dg_eX083mMvUqU2XGErEzHX6Wn4'
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.J-8ylRj-qsbIPFFTWbXzlk7ZQt4'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
 trainer_list = []
 trainer_id_list = []
+moveListTemp = []
 local_time = ''
 
 
@@ -29,6 +30,7 @@ async def on_ready():
     global trainer_list
     global trainer_id_list
     global local_time
+    global moveListTemp
 
     print("A wild game idea has appeared")
     with open("CompleteEmojiDex.dat", "rb") as f:
@@ -36,6 +38,9 @@ async def on_ready():
 
     with open("TrainerList.dat", "rb") as f:
         trainer_list = pickle.load(f)
+
+    with open("CompleteMoveList.dat", "rb") as f:
+        moveListTemp = pickle.load(f)
 
     trainer_id_list = [i.id for i in trainer_list]
     local_time = datetime.now()
@@ -143,7 +148,7 @@ async def check_move(ctx, emoji_name=""):
     while True:
         team = ', '.join([str(i) for i in trainer.team])
         while True:
-            msg = await ctx.author.send(f"Which emoji do you want to teach: {team}")
+            msg = await ctx.author.send(f"Which emoji do you want to check: {team}")
             index = await select_one_from_list(ctx.author, ctx.author, [0, 1, 2, 3], selection_message=msg)
             if trainer.team[index] is None:
                 await ctx.author.send("Whatever you're smokin, I want some of that. Try again")
@@ -151,6 +156,16 @@ async def check_move(ctx, emoji_name=""):
                 break
 
         await ctx.author.send(trainer.team[index].move_stat())
+        msg = await ctx.author.send("Do you want to check your team's moves again?")
+        if await select_one_from_list(ctx, ctx.author, [True, False], ['👍', '👎'], msg):
+            msg = await ctx.author.send("Ah shit, here we go again")
+            await asyncio.sleep(1)
+            await msg.delete()
+        else:
+            msg = await ctx.author.send("The curse have been broken, I have been freed from my duties")
+            await asyncio.sleep(1)
+            await msg.delete()
+            break
 
 
 @client.command()
@@ -378,6 +393,7 @@ async def battle(ctx, challenger, challenged):
     global emoji_list
     global trainer_list
     global trainer_id_list
+    global moveListTemp
 
     challenger_user = client.get_user(challenger.id)
     challenged_user = client.get_user(challenged.id)
@@ -438,21 +454,20 @@ async def battle(ctx, challenger, challenged):
     while True:
         move_chosen = await select_one_from_list(ctx, challenger_user, challenger_moves)
         msg = await ctx.send(f"{challenger_emoji.name} used {move_chosen}")
+        # Scuffed implementation but will be reworked
+
         # Type check:
-        if move_chosen.moveEffect[0] is not "H":  # Normal attack
-            image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
-            calc = clrMod*damage_calculation(challenger_emoji, challenged_emoji, move_chosen)
-            challenged_hp -= calc[1]  # This is the damage dealt
-        elif move_chosen.moveEffect[0] is "H":  # Healing attack
-            calc = heal_calc(challenger_emoji, challenged_emoji, move_chosen)
-            challenger_hp += calc[2]
-            challenged_hp -= calc[1]
+        image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
+        calc = effect_check(challenger_emoji, challenged_emoji, move_chosen)
+        challenger_hp += calc[2]
+        challenged_hp -= calc[1]
+
         if calc[3]:
             challenger_moves.remove(move_chosen)
         await asyncio.sleep(3)
         await msg.delete()
         msg = await ctx.send(
-            f"The move {calc[0]}, dealt {calc[2]} damage. {challenged_emoji.name} has {challenged_hp} hp left"
+            f"The move {calc[0]}, dealt {calc[1]} damage. {challenged_emoji.name} has {challenged_hp} hp left"
         )
         if challenged_hp <= 0:  # Challenger win condition
             await ctx.send(f'{challenged_emoji.name} has fallen into depression')
@@ -510,20 +525,20 @@ async def battle(ctx, challenger, challenged):
 
         # Challenged trainer's turn
         move_chosen = await select_one_from_list(ctx, challenged_user, challenged_moves)
-        msg = await ctx.send(f"{challenged_emoji.name} used {move_chosen}")
+        await ctx.send(f"{challenged_emoji.name} used {move_chosen}")
         # No need for a second move_chosen cuz it's turn_based anyways
+        # Scuffed implementation but will be reworked
+        for x in range(len(moveListTemp)):
+            if move_chosen == moveListTemp[x].moveName:
+                move_obj = moveListTemp[x]
 
         # Type check:
-        if move_chosen.moveEffect[0] is not "H":  # Normal attack for now
-            image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "knife2"), filename='Image.jpeg'))
-            calc = cldMod * damage_calculation(challenged_emoji, challenger_emoji, move_chosen)
-            challenger_hp -= calc[1]
-        elif move_chosen.moveEffect[0] is "H":  # Healing attack
-            calc = heal_calc(challenged_emoji, challenger_emoji, move_chosen)
-            challenged_hp += calc[2]
-            challenger_hp -= calc[1]
+        image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "knife2"), filename='Image.jpeg'))
+        calc = effect_check(challenged_emoji, challenger_emoji, move_chosen)
+        challenged_hp += calc[2]
+        challenger_hp -= calc[1]
         if calc[3]:
-            challenger_moves.remove(move_chosen)
+            challenged_moves.remove(move_chosen)
 
         await asyncio.sleep(3)
         msg = await ctx.send(
