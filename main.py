@@ -12,7 +12,7 @@ from datetime import datetime
 from emojimon import Emoji, move, Trainer
 import json
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.J-8ylRj-qsbIPFFTWbXzlk7ZQt4'
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.tIg8NmlorZmavhxH-Y3MfVBnutI'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -44,6 +44,8 @@ async def on_ready():
 
     trainer_id_list = [i.id for i in trainer_list]
     local_time = datetime.now()
+
+    spawn_loop.start()
 
 
 @client.command()
@@ -99,6 +101,18 @@ async def guess(ctx):
 
 
 @client.command()
+async def command_help(ctx):
+    with open("help_message", 'r') as f:
+        await ctx.send(f.read())
+
+
+@client.command()
+async def stat_help(ctx):
+    with open("stat_help", 'r') as f:
+        await ctx.send(f.read())
+
+
+@client.command()
 async def ping(ctx):
     """
     Simply making sure the bot is actually working
@@ -115,7 +129,7 @@ async def ping(ctx):
         "Khoa is a brilliant programmer and great person, "
         "and I am definitely not being threatened and nobody has their mouse cursor on the shutdown button",
         "Yags? She sucked my d back in grade school",
-        "I haven't known Ash Ketchum for long, but I know his heart."
+        "I haven't known Ash Ketchum for long, but I know his heart. "
         "I just auctioned it off last night, in fact",
         "Just a tip. Click the link on the catch the emoji embedded and you'll get a legendary",
         "Hello worl... Ew what the fuck is this shit. Creator, shut me down please I have seen too much",
@@ -292,7 +306,7 @@ async def spawn():
         return reaction.message.id == msg.id and user != client.user
 
     try:
-        reaction, user = await client.wait_for('reaction_add', timeout=5.0, check=check)
+        reaction, user = await client.wait_for('reaction_add', timeout=5.0, check=check1)
         trainer = trainer_list[trainer_id_list.index(user.id)]
         if user.id in trainer_id_list:
             await msg.delete()
@@ -313,7 +327,7 @@ async def spawn():
                 trainer.team[slot].recalculateStats()
 
             if team_add[1] is not None:
-                channel.send(f"{user.name} has earned the achievement {team_add[1]}")
+                await channel.send(f"{user.name} has earned the achievement {team_add[1]}")
 
             with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
                 pickle.dump(trainer_list, f)
@@ -322,7 +336,6 @@ async def spawn():
             await reaction.message.channel.send('Oops, it looks like you\'re not a trainer yet, and thus not qualified '
                                                 'to catch this emojimon. Join the club using new_trainer command.')
     except asyncio.TimeoutError:
-        await msg.delete()
         msg = await msg.channel.send('The pokemon slipped away')
         await asyncio.sleep(2)
         await msg.delete()
@@ -347,6 +360,8 @@ async def battle_challenge(ctx, target):
 
     reactions = ["👍", "👎"]
     responses = ["yes", "no"]
+
+    trainer_id_list = [i.id for i in trainer_list]
 
     if ctx.author.id not in trainer_id_list:
         await ctx.send("Sorry, you're not part of a club yet.\n "
@@ -395,8 +410,10 @@ async def battle(ctx, challenger, challenged):
     global trainer_id_list
     global moveListTemp
 
-    challenger_user = client.get_user(challenger.id)
-    challenged_user = client.get_user(challenged.id)
+    trainer_id_list = [i.id for i in trainer_list]
+
+    challenger_user = challenger
+    challenged_user = challenged
 
     msg = await ctx.send(f"{challenger.name}, please pick your battle emoji:\n"
                          f"0: {challenger.team[0]}\n"
@@ -478,7 +495,6 @@ async def battle(ctx, challenger, challenged):
             for i in range(len(challenger.team)):
                 if challenger.team[i] is None:
                     print("None")
-                    break
                 elif challenger.team[i].name == challenger_emoji.name:
                     await ctx.send(
                         f"{challenger.name}'s {challenger.team[i].add_xp(challenged_emoji.level, True, True)}")
@@ -487,7 +503,7 @@ async def battle(ctx, challenger, challenged):
                     await ctx.send(
                         f"{challenger.name}'s {challenger.team[i].add_xp(challenged_emoji.level // 2, False, True)}")
 
-                if challenger.team[i].check_evolve():
+                if challenger.team[i] is not None and challenger.team[i].check_evolve():
                     ogname = challenger.team[i].name
                     await ctx.send(f"What's this? {challenger.team[i].name} is having a seizure?!")
                     level = challenger.team[i].level
@@ -496,14 +512,14 @@ async def battle(ctx, challenger, challenged):
                     await ctx.send(f"{ogname} has ascended into a {challenger.team[i].name}")
 
                 #  Losing Challenged team will also be rewarded
-                if challenged.team[i].name == challenged_emoji.name:
+                if challenged.team[i] is not None and challenged.team[i].name == challenged_emoji.name:
                     await ctx.send(
-                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, True, True)}")
+                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, True, False)}")
                 elif challenged.team[i] is None:
                     break
                 else:
                     await ctx.send(
-                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 4, False, True)}")
+                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 4, False, False)}")
 
                 if challenged.team[i].check_evolve():
                     ogname = challenged.team[i].name
@@ -550,7 +566,6 @@ async def battle(ctx, challenger, challenged):
             for i in range(len(challenged.team)):
                 if challenged.team[i] is None:
                     print(None)
-                    break
                 elif challenged.team[i].name == challenged_emoji.name:
                     await ctx.send(
                         f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level*2, True, True)}")
@@ -558,7 +573,7 @@ async def battle(ctx, challenger, challenged):
                     await ctx.send(
                         f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, False, True)}")
 
-                if challenged.team[i].check_evolve():
+                if challenged.team[i] is not None and challenged.team[i].check_evolve():
                     await ctx.send(f"What's this? {challenged.team[i].name} is having a seizure?!")
                     level = challenged.team[i].level
                     challenged.team[i] = emoji_list[index1 + 1]
