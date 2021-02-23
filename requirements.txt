@@ -2,3 +2,4 @@ requests==2.25.1
 Pillow==8.1.0
 discord.py==1.5.1
 matplotlib==3.3.2
+numpy~=1.19.4
