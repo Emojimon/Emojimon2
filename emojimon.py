@@ -38,7 +38,7 @@ class Emoji:
     evolutionLevel = 0
 
     # xp and leveling
-    currentXp = 0
+    xp = 0
     neededXp = 0
     levelingMod = 1.0
 
@@ -84,8 +84,8 @@ class Emoji:
     def __init__(self, indexNum):
         self.emojiNumber = indexNum
         self.imageReference = "Emoji" + indexNum.__str__()
-        self.name = RandomWord()
-        self.type = RandomType()
+        self.name = ''
+        self.type = ''
         self.level = random.randint(1, 50)
         # Evolutions will be handled out of initialization
         self.evolution = ""
@@ -125,7 +125,6 @@ class Emoji:
         return self.name
 
     def recalculateStats(self):
-
         self.maxHp = int(self.level * self.hpGain * self.hpGene)
         self.atkStat = int(self.level * self.atkGain * self.atkGene)
         self.defStat = int(self.level * self.defGain * self.defGene)
@@ -257,7 +256,7 @@ class Trainer:
         """
         The Trainer class constructor
         :param name: self-explanatory
-        :param discord_id: todo: change this to Discord user class object instead to make room for expansions
+        :param discord_id:
         :param beginner_emoji: The first emoji to be used (starter pick wont take place here to allow for dev usage)
         :param date_started: Why not, might be necessary later
         """
@@ -268,6 +267,8 @@ class Trainer:
         self.gym_badges = []
         self.wins = 0
         self.losses = 0
+        self.c_guess = 0
+        self.w_guess = 0
         self.emojis_caught = 0
         self.date_started = date_started
         self.id = discord_id
@@ -275,7 +276,51 @@ class Trainer:
         self.inventory = []
 
     def __str__(self):
-        return self.name
+        return f"[{self.role}] {self.name}"
+
+    def reset(self, starter_emoji: Emoji):
+        """
+        Players can reset their account entirely and start anew, or as a reward, have to give up all emojis and item
+        to obtain one
+        :param starter_emoji: The emoji that will be traded for the entire inventory of the player
+        """
+        self.beginner_emoji = starter_emoji
+        self.team = [self.beginner_emoji, None, None, None]
+        self.gym_badges = []
+        self.inventory = []
+
+    def assign_role(self, role: str, title: bool):
+        """
+        Assign a role to the trainer.
+        For gyms, there will be Gamer, for a gamer gym member, Gamer Leader as leader of gamer gym
+        Players can also hold the title of Champion, as well as Apex Trainer for defending the title for at least
+        2 tournaments in succession. There can be many people holding the title in 1 tournament
+        Legendary Apex Trainer is only given to those who can assemble a team of 4 gym emojis.
+        Similarly, Legendary Collector is only given to those who can catch both legendaries.
+        Each title granted will come with an achievement, achievements last forever, title do not.
+        Player can choose to take the title or not
+        """
+        if title:
+            self.role = role
+        if role not in self.achievements:
+            self.achievements.append(role)
+
+    def guess_score(self):
+        """
+        Any correct guess the emoji attempts should be run through this method to earn achievements
+        :return: achievement if you earned any, if not it returns None
+        """
+        achievement = None
+        self.c_guess += 1
+        if self.c_guess == 10:
+            self.achievements.append("Professor Maple")
+            achievement = "Professor Maple"
+        if self.c_guess == 20:
+            self.achievements.append("Yeah, I got a PhD... in Emojis")
+            achievement = "Yeah, I got a PhD... in Emojis"
+        if self.c_guess == 50:
+            self.achievements.append("Yeah, I got a job... Discord Mod")
+            achievement = "Yeah, I got a job... Discord Mod"
 
     def add_w(self):
         """
@@ -286,10 +331,10 @@ class Trainer:
         self.wins += 1
         if self.wins == 10:
             self.achievements.append("All that Ws")
-            achievement = "All that Ws"
+            achievement = "All that Ws (Win 10 matches)"
         if self.wins == 50:
             self.achievements.append("Apex Emoji")
-            achievement = "Apex Emoji"
+            achievement = "Apex Emoji (Win 50 matches)"
         return achievement
 
     def add_l(self):
@@ -301,10 +346,10 @@ class Trainer:
         self.losses += 1
         if self.losses == 10:
             self.achievements.append("The bane of emojis")
-            achievement = "The bane of emojis"
+            achievement = "The bane of emojis (Lose 10 matches)"
         if self.losses == 50:
-            self.achievements.append("Did it for the achievement")
-            achievement = "Did it for the achievement"
+            self.achievements.append("Totally did it for the achievement")
+            achievement = "Totally did it for the achievement (Lose 50 matches)"
 
         return achievement
 
@@ -344,10 +389,22 @@ class Trainer:
         self.inventory.append(self.team[slot])
         self.team[slot] = emoji
 
+    def profile(self):
+        return f"{self.name}: {self.wins} Ws, {self.losses} Ls, {self.emojis_caught} emojis.\n " \
+               f"({','.join(self.achievements)})"
+
+    def pick(self, index: int):
+        if self.team[index] is None:
+            return None
+        return self.team[index]
+
 
 if __name__ == '__main__':
     with open('CompleteEmojiDex.dat', 'rb') as f:
         data_list = pickle.load(f)
 
-    im = Image.open(data_list[1412].stat_graph())
-    im.show()
+    with open('TrainerList.dat', 'rb') as f:
+        trainer_list = pickle.load(f)
+
+    for trainer in trainer_list:
+        print(trainer.profile())
