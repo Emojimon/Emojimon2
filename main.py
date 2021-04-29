@@ -12,7 +12,7 @@ from datetime import datetime
 from emojimon import *
 from utils import *
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.4rHahrIe_UkT6ZmUcpnaUADm8NI'
+TOKEN = ''
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
