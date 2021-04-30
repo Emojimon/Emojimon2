@@ -59,7 +59,7 @@ async def select_one_from_list(client, messageable, author, lst, emojis=None, se
     return selected
 
 
-async def trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list):
+async def trainer_init(ctx, user):
     """
     Handles trainer sign up
     :param ctx: the context parameter (this is the discord server, not the user's dm)
@@ -67,8 +67,10 @@ async def trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list):
     :param message: rn it's nothing, todo: make the message sent customizable, just in case
     :return:
     """
+    emoji_list = emojiList()
+    trainer_list = trainerList()
 
-    if user.id in trainer_id_list:
+    if trainer_finder(user.id) is not None:
         user.send("You already are a trainer, how much cocaine did you smoke today? Shoo! Get the fuck out.")
         return
 
@@ -88,10 +90,9 @@ async def trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list):
                               f"1: {starter_emojis[1]}\n"
                               f"2: {starter_emojis[2]}\n")
         emoji_picked = await select_one_from_list(user, user, starter_emojis, selection_message=msg)
-        trainer_list.append(Trainer(user.name, user.id, emoji_picked, datetime.now().strftime("%x")))
-        trainer_id_list.append(user.id)
+        trainer = Trainer(user.id, user.name, emoji_picked, datetime.now().strftime("%x"))
+        trainer_list.append(trainer)
 
-        trainer = trainer_list[trainer_id_list.index(user.id)]
         trainer.team[0].hpGene = random.uniform(1, 2)
         trainer.team[0].atkGene = random.uniform(1, 2)
         trainer.team[0].defGene = random.uniform(1, 2)
@@ -100,8 +101,7 @@ async def trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list):
         trainer.team[0].speGene = random.uniform(1, 2)
         trainer.team[0].recalculateStats()
 
-        with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-            pickle.dump(trainer_list, f)
+        save_game()
 
         await user.send(f"Welcome to the club {user.name}.")
         await ctx.send(f"Welcome to the club {user.name}.")
@@ -112,7 +112,7 @@ async def trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list):
 
 
 def effect_check(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
-    global moveListTemp
+    moveListTemp = moveList()
     effectType = ''
 
     for x in range(len(moveListTemp)):
@@ -134,8 +134,8 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     :return: the effectiveness of the attack, as well as damage output
     todo: rebalance
     """
-    global moveListTemp
-    global newData
+    moveListTemp = moveList()
+    newData = typeChart()
 
     for y in range(1, len(newData)):
         for x in range(1, len(newData)):
