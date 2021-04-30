@@ -254,8 +254,22 @@ class Trainer:
     It also makes things cleaner
     todo: Integrate discord user in here
     """
+    name = ""
+    beginner_emoji = Emoji
+    team = []
+    achievements = []
+    gym_badges = []
+    wins = 0
+    losses = 0
+    c_guess = 0
+    emojis_caught = 0
+    date_started = ""
+    id = 0
+    role = ''  # If it is the name of one of the emoji type, the person is a gym leader
+    inventory = []
 
     def __init__(self, name: str, discord_id: int, beginner_emoji: Emoji, date_started: str):
+
         """
         The Trainer class constructor
         :param name: self-explanatory
@@ -275,7 +289,7 @@ class Trainer:
         self.emojis_caught = 0
         self.date_started = date_started
         self.id = discord_id
-        self.role = 'player'  # If it is the name of one of the emoji type, the person is a gym leader
+        self.role = 'Player'  # If it is the name of one of the emoji type, the person is a gym leader
         self.inventory = []
 
     def __int__(self):
@@ -287,7 +301,6 @@ class Trainer:
         self.wins = 0
         self.losses = 0
         self.c_guess = 0
-        self.w_guess = 0
         self.emojis_caught = 0
         self.date_started = "Temp Account"
         self.id = 0
@@ -297,16 +310,34 @@ class Trainer:
     def __str__(self):
         return f"[{self.role}] {self.name}"
 
-    def reset(self, starter_emoji: Emoji):
+    def stats(self):
+        return f"Name: {self.__str__()}\n" \
+               f"Team: {', '.join([i.name for i in self.team])}\n" \
+               f"Wins/Losses: {self.wins}/{self.losses}\n" \
+               f"Correct Guesses: {self.c_guess}\n" \
+               f"Emojis Caught: {self.emojis_caught}\n" \
+               f"Achievements: {', '.join(self.achievements)}\n" \
+               f"Date joined: {self.date_started}"
+
+    def reset(self, starter_emoji: Emoji = None):
         """
         Players can reset their account entirely and start anew, or as a reward, have to give up all emojis and item
         to obtain one
         :param starter_emoji: The emoji that will be traded for the entire inventory of the player
         """
-        self.beginner_emoji = starter_emoji
-        self.team = [self.beginner_emoji, None, None, None]
         self.gym_badges = []
-        self.inventory = []
+        if starter_emoji is not None:
+            self.beginner_emoji = starter_emoji
+            self.team = [self.beginner_emoji, None, None, None]
+        else:
+            self.inventory = []
+            self.achievements = []
+            self.wins = 0
+            self.losses = 0
+            self.c_guess = 0
+            self.w_guess = 0
+            self.emojis_caught = 0
+            self.role = "Player"
 
     def assign_role(self, role: str, title: bool):
         """
@@ -340,6 +371,8 @@ class Trainer:
         if self.c_guess == 50:
             self.achievements.append("Yeah, I got a job... Discord Mod")
             achievement = "Yeah, I got a job... Discord Mod"
+
+        return achievement
 
     def add_w(self):
         """
@@ -431,6 +464,19 @@ with open("CompleteMoveList.dat", "rb") as f:
 
 def emoji_finder(index):
     return copy.deepcopy(emoji_list(index))
+
+
+def trainer_finder(id: int):
+    for i in trainer_list:
+        if i.id == id:
+            return i
+        else:  # No player was found
+            return None
+
+
+def save_game():
+    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
+        pickle.dump(trainer_list, f)
 
 
 class IdTrainer(commands.UserConverter):
