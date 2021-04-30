@@ -177,22 +177,18 @@ async def new_trainer(ctx):
     """
     Adds new trainer to the game
     """
-    await trainer_init(ctx, ctx.author, trainer_list, trainer_id_list, emoji_list)
+    await trainer_init(ctx, ctx.author)
 
 
 @client.command()
 @commands.dm_only()
 async def check_move(ctx, emoji_name=""):
-    global trainer_list
-    global trainer_id_list
-
-    trainer_id_list = [i.id for i in trainer_list]  # Updates trainer_id_list
     try:
-        trainer = trainer_list[trainer_id_list.index(ctx.author.id)]
+        trainer = trainer_finder(ctx.author.id)
     except KeyError:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, ctx.author, trainer_list, trainer_id_list, emoji_list)
+        await trainer_init(ctx, ctx.author)
 
     while True:
         team = ', '.join([str(i) for i in trainer.team])
@@ -220,11 +216,7 @@ async def check_move(ctx, emoji_name=""):
 @client.command()
 @commands.dm_only()
 async def learn_move(ctx, emoji_name=""):
-    global trainer_list
-    global trainer_id_list
-
-    trainer_id_list = [i.id for i in trainer_list]  # Updates trainer_id_list
-    trainer = trainer_list[trainer_id_list.index(ctx.author.id)]
+    trainer = trainer_finder(ctx.author.id)
     while True:
         team = ', '.join([str(i) for i in trainer.team])
         while True:
@@ -278,21 +270,18 @@ async def learn_move(ctx, emoji_name=""):
             await msg.delete()
             break
 
-    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-        pickle.dump(trainer_list, f)
+    save_game()
 
 
 @client.command()
 @commands.dm_only()
 async def emoji_team(ctx):
-    global trainer_list
-    global trainer_id_list
+    trainer = trainer_finder(ctx.author.id)
 
-    if ctx.author.id not in trainer_id_list:
+    if trainer is None:
         await ctx.send("You don't even have an emoji yet, become a trainer first")
         return
 
-    trainer = trainer_list[trainer_id_list.index(ctx.author.id)]
     for i in trainer.team:
         if i is not None:
             await ctx.author.send(file=discord.File(fp=i.stat_graph(), filename='image.png'))
@@ -401,7 +390,7 @@ async def battle_challenge(ctx, target):
     if ctx.author.id not in trainer_id_list:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, ctx.author, trainer_list, trainer_id_list, emoji_list)
+        await trainer_init(ctx, ctx.author)
 
     try:
         user = client.get_user(int(''.join([i for i in target if i.isdigit()])))
@@ -416,7 +405,7 @@ async def battle_challenge(ctx, target):
     if user.id not in trainer_id_list:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, user, trainer_list, trainer_id_list, emoji_list)
+        await trainer_init(ctx, user)
 
     await ctx.send(f"{ctx.author.name} has challenged {user.name} to a battle.")
     msg = await user.send(f'{ctx.author.name} has challenged you to a battle. Do you accept?')
