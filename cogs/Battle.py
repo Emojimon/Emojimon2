@@ -18,19 +18,19 @@ class Battle(commands.Cog):
         self.defendEmoji = Emoji
 
     @commands.command()
-    async def battle(self, ctx, challenger: Trainer, defender: Trainer):
+    async def battle(self, ctx, challenger: IdTrainer, defender: IdTrainer):
         self.challenger = challenger
         self.defender = defender
 
         # Setup for battle
-        msg = await ctx.send(f"{challenger.name}, please pick your battle emoji:\n"
+        msg = await ctx.send(f" {challenger.name}, please pick your battle emoji:\n"
                              f"0: {challenger.team[0]}\n"
                              f"1: {challenger.team[1]}\n"
                              f"2: {challenger.team[2]}\n"
                              f"3: {challenger.team[3]}")
 
-        i1 = await select_one_from_list(ctx, self.client.get_user(challenger.id), [0, 1, 2, 3], selection_message=msg)
-        self.challengeEmoji = challenger.team[i1]
+        i1 = await select_one_from_list(self.client, ctx, self.client.get_user(challenger.id), [0, 1, 2, 3], selection_message=msg)
+        self.challengeEmoji = copy.deepcopy(challenger.team[i1])
 
         msg = await ctx.send(f"{defender.name}, please pick your battle emoji:\n"
                              f"0: {challenger.team[0]}\n"
@@ -38,8 +38,8 @@ class Battle(commands.Cog):
                              f"2: {challenger.team[2]}\n"
                              f"3: {challenger.team[3]}")
 
-        i1 = await select_one_from_list(ctx, self.client.get_user(defender.id), [0, 1, 2, 3], selection_message=msg)
-        self.defendEmoji = defender.team[i1]
+        i2 = await select_one_from_list(self.client, ctx, self.client.get_user(defender.id), [0, 1, 2, 3], selection_message=msg)
+        self.defendEmoji = copy.deepcopy(defender.team[i2])
 
         # Reset emojis' hp
         self.challengeEmoji.currentHp = self.challengeEmoji.maxHp
@@ -63,10 +63,24 @@ class Battle(commands.Cog):
         await image.delete()
 
         while not self.gameOver():
-            move_c = await select_one_from_list(
+            # Index num of the emojis
+            index1 = i1
+            index2 = i2
+
+            # The move chosen by the emojis, the order will be changed based on speed
+            move_1 = await select_one_from_list(
                 self.client, ctx, self.client.get_user(challenger.id), self.challengeEmoji.move_list())
-            move_d = await select_one_from_list(
+            move_2 = await select_one_from_list(
                 self.client, ctx, self.client.get_user(challenger.id), self.challengeEmoji.move_list())
+            if self.challengeEmoji.speedStat < self.defendEmoji.speedStat:
+                move_temp = move_1
+                move_1 = move_2
+                move_2 = move_temp
+                index_temp = index1
+                index1 = index2
+                index2 = index_temp
+            image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
+            calc = effect_check(challenger_emoji, challenged_emoji, move_chosen)
 
     async def battle_loop(self, player):
         """
