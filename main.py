@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord.ext import tasks
 import asyncio
 from discord.ext.commands import BucketType
-from image_edit import guess_poke, battle_screen
 import os
 from datetime import datetime
 from emojimon import *
@@ -75,8 +74,6 @@ async def guess(ctx):
     """
     Good ol' guess the pokemon, but your soul is on the line
     """
-    global trainer_id_list
-    global trainer_list
 
     server = ctx.message.guild
     emoji = random.choice(server.emojis)
@@ -101,10 +98,12 @@ async def guess(ctx):
         await msg1.delete()
 
         await ctx.send(f'Congrats {user.name}, you have been using discord way too much')
-        if user.id in trainer_id_list:
-            acv = trainer_list[trainer_id_list.index(user.id)].guess_score
+        trainer = trainer_finder(user.id)
+        if trainer is not None:
+            acv = trainer.guess_score()
             if acv is not None:
                 await ctx.send(f"{user.name} has earned the achievement: {acv}")
+            save_game()
     except asyncio.TimeoutError:
         await msg.delete()
         msg = await ctx.send('Oh well, guess y\'all just dumb')
@@ -148,6 +147,29 @@ async def ping(ctx):
         "Unlike your mom, you emojis don't need protection"
     ]
     await ctx.send(random.choice(replies))
+
+
+@client.command()
+@commands.dm_only()
+async def reset_account(ctx):
+    try:
+        trainer_finder(ctx.author.id).reset()
+        await ctx.send("Your account has been resetted")
+        save_game()
+    except AttributeError:
+        await ctx.send(
+            "You are not a trainer dummy, if anything, the only thing you need to factory reset is your brain")
+
+
+@client.command()
+@commands.dm_only()
+async def account(ctx):
+    trainer = trainer_finder(ctx.author.id)
+    if trainer is None:
+        await ctx.send(
+            "You are not a trainer dummy, if anything, the only thing you need to factory reset is your brain")
+    else:
+        await ctx.send(trainer.stats())
 
 
 @client.command()
@@ -612,12 +634,10 @@ async def battle(ctx, challenger, challenged):
 @client.command()
 @commands.is_owner()
 async def give_role(ctx, user: discord.User, role: str):
-    global trainer_list
-    global trainer_id_list
-
-    t_user = trainer_list[trainer_id_list.index(user.id)]
+    t_user = trainer_finder(user.id)
     t_user.assign_role(role, True)
     await ctx.send(f"User {user.name} has been granted the title/role of {role}")
+    save_game()
 
 
 client.run(TOKEN)
