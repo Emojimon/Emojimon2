@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from math import pi
 import io
 from PIL import Image, ImageEnhance
+from discord.ext import commands
+import discord
+import copy
 
 
 class move:
@@ -252,7 +255,7 @@ class Trainer:
     todo: Integrate discord user in here
     """
 
-    def __init__(self, name, discord_id: int, beginner_emoji: Emoji, date_started: str):
+    def __init__(self, name: str, discord_id: int, beginner_emoji: Emoji, date_started: str):
         """
         The Trainer class constructor
         :param name: self-explanatory
@@ -273,6 +276,22 @@ class Trainer:
         self.date_started = date_started
         self.id = discord_id
         self.role = 'player'  # If it is the name of one of the emoji type, the person is a gym leader
+        self.inventory = []
+
+    def __int__(self):
+        self.name = "Temp Player"
+        self.beginner_emoji = emoji_finder(1)
+        self.team = [self.beginner_emoji, None, None, None]
+        self.achievements = []
+        self.gym_badges = []
+        self.wins = 0
+        self.losses = 0
+        self.c_guess = 0
+        self.w_guess = 0
+        self.emojis_caught = 0
+        self.date_started = "Temp Account"
+        self.id = 0
+        self.role = 'temp'  # If it is the name of one of the emoji type, the person is a gym leader
         self.inventory = []
 
     def __str__(self):
@@ -397,6 +416,42 @@ class Trainer:
         if self.team[index] is None:
             return None
         return self.team[index]
+
+
+# Data, the following code is necessary only for a discord client
+with open("CompleteEmojiDex.dat", "rb") as f:
+    emoji_list = pickle.load(f)
+
+with open("TrainerList.dat", "rb") as f:
+    trainer_list = pickle.load(f)
+
+with open("CompleteMoveList.dat", "rb") as f:
+    moveListTemp = pickle.load(f)
+
+
+def emoji_finder(index):
+    return copy.deepcopy(emoji_list(index))
+
+
+class IdTrainer(commands.UserConverter):
+    """
+    Convert user id to Trainer object
+    """
+    async def convert(self, ctx, argument):
+        user = await super().convert(ctx, argument)
+        for i in trainer_list:
+            if i.id == user.id:
+                return i
+            else:  # No player was found
+                return None
+
+
+class IdEmoji(commands.Converter):
+    """
+    Convert Emoji index number to emoji
+    """
+    async def convert(self, ctx, argument: int):
+        return copy.deepcopy(emoji_list[argument])
 
 
 if __name__ == '__main__':
