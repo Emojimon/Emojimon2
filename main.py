@@ -2,17 +2,14 @@ import discord
 from discord.ext import commands
 from discord.ext import tasks
 import asyncio
-
 from discord.ext.commands import BucketType
-
 from image_edit import guess_poke, battle_screen
-from battle_calc import *
 import os
 from datetime import datetime
 from emojimon import *
 from utils import *
 
-TOKEN = ''
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.rzUEsTACb5LSGYmfc6q-LRO78qQ'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -50,7 +47,7 @@ async def on_ready():
         if filename.endswith('.py'):
             client.load_extension(f'cogs.{filename[:-3]}')
 
-    #spawn_loop.start()
+    # spawn_loop.start()
     print("A wild game idea has appeared")
 
 
@@ -277,7 +274,7 @@ async def emoji_team(ctx):
     for i in trainer.team:
         if i is not None:
             await ctx.author.send(file=discord.File(fp=i.stat_graph(), filename='image.png'))
-            await ctx.author.send("Move set:\n"+", ".join([i.move1, i.move2, i.move3, i.move4]))
+            await ctx.author.send("Move set:\n" + ", ".join([i.move1, i.move2, i.move3, i.move4]))
 
 
 @tasks.loop(seconds=10)
@@ -493,7 +490,7 @@ async def battle(ctx, challenger, challenged):
         image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "gun1"), filename='Image.jpeg'))
         calc = effect_check(challenger_emoji, challenged_emoji, move_chosen)
         challenger_hp += calc[2]
-        challenged_hp -= cldMod*calc[1]
+        challenged_hp -= cldMod * calc[1]
 
         if calc[3]:
             challenger_moves.remove(move_chosen)
@@ -572,7 +569,7 @@ async def battle(ctx, challenger, challenged):
         image = await ctx.send(file=discord.File(fp=battle_screen(index1, index2, "knife2"), filename='Image.jpeg'))
         calc = effect_check(challenged_emoji, challenger_emoji, move_chosen)
         challenged_hp += calc[2]
-        challenger_hp -= clrMod*calc[1]
+        challenger_hp -= clrMod * calc[1]
         if calc[3]:
             challenged_moves.remove(move_chosen)
 
@@ -588,7 +585,7 @@ async def battle(ctx, challenger, challenged):
                     print(None)
                 elif challenged.team[i].name == challenged_emoji.name:
                     await ctx.send(
-                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level*2, True, True)}")
+                        f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level * 2, True, True)}")
                 else:
                     await ctx.send(
                         f"{challenged.name}'s {challenged.team[i].add_xp(challenger_emoji.level // 2, False, True)}")
@@ -611,6 +608,7 @@ async def battle(ctx, challenger, challenged):
         await asyncio.sleep(3)
         await image.delete()
 
+
 @client.command()
 @commands.is_owner()
 async def give_role(ctx, user: discord.User, role: str):
@@ -620,5 +618,6 @@ async def give_role(ctx, user: discord.User, role: str):
     t_user = trainer_list[trainer_id_list.index(user.id)]
     t_user.assign_role(role, True)
     await ctx.send(f"User {user.name} has been granted the title/role of {role}")
+
 
 client.run(TOKEN)
