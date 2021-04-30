@@ -8,6 +8,52 @@ from discord.ext import commands
 import discord
 import copy
 
+# Data, the following code is necessary only for a discord client
+with open("CompleteEmojiDex.dat", "rb") as f:
+    emoji_list = pickle.load(f)
+
+with open("TrainerList.dat", "rb") as f:
+    trainer_list = pickle.load(f)
+
+with open("CompleteMoveList.dat", "rb") as f:
+    moveListTemp = pickle.load(f)
+
+with open("TypeChart2dArray.dat", "rb") as f:
+    newData = pickle.load(f)
+
+
+def emoji_finder(index):
+    return copy.deepcopy(emoji_list(index))
+
+
+def trainer_finder(id: int):
+    for i in trainer_list:
+        if i.id == id:
+            return i
+        else:  # No player was found
+            return None
+
+
+def emojiList():
+    return emoji_list
+
+
+def trainerList():
+    return trainer_list
+
+
+def moveList():
+    return moveListTemp
+
+
+def typeChart():
+    return newData
+
+
+def save_game():
+    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
+        pickle.dump(trainer_list, f)
+
 
 class move:
     moveName = ""
@@ -255,7 +301,7 @@ class Trainer:
     todo: Integrate discord user in here
     """
     name = ""
-    beginner_emoji = Emoji
+    beginner_emoji = emoji_finder(1)
     team = []
     achievements = []
     gym_badges = []
@@ -268,7 +314,8 @@ class Trainer:
     role = ''  # If it is the name of one of the emoji type, the person is a gym leader
     inventory = []
 
-    def __init__(self, name: str, discord_id: int, beginner_emoji: Emoji, date_started: str):
+    def __init__(self, discord_id: int, name: str = "Temp PLayer", beginner_emoji: Emoji = emoji_finder(1),
+                 date_started: str = "Temp Account"):
 
         """
         The Trainer class constructor
@@ -290,21 +337,6 @@ class Trainer:
         self.date_started = date_started
         self.id = discord_id
         self.role = 'Player'  # If it is the name of one of the emoji type, the person is a gym leader
-        self.inventory = []
-
-    def __int__(self):
-        self.name = "Temp Player"
-        self.beginner_emoji = emoji_finder(1)
-        self.team = [self.beginner_emoji, None, None, None]
-        self.achievements = []
-        self.gym_badges = []
-        self.wins = 0
-        self.losses = 0
-        self.c_guess = 0
-        self.emojis_caught = 0
-        self.date_started = "Temp Account"
-        self.id = 0
-        self.role = 'temp'  # If it is the name of one of the emoji type, the person is a gym leader
         self.inventory = []
 
     def __str__(self):
@@ -451,38 +483,11 @@ class Trainer:
         return self.team[index]
 
 
-# Data, the following code is necessary only for a discord client
-with open("CompleteEmojiDex.dat", "rb") as f:
-    emoji_list = pickle.load(f)
-
-with open("TrainerList.dat", "rb") as f:
-    trainer_list = pickle.load(f)
-
-with open("CompleteMoveList.dat", "rb") as f:
-    moveListTemp = pickle.load(f)
-
-
-def emoji_finder(index):
-    return copy.deepcopy(emoji_list(index))
-
-
-def trainer_finder(id: int):
-    for i in trainer_list:
-        if i.id == id:
-            return i
-        else:  # No player was found
-            return None
-
-
-def save_game():
-    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-        pickle.dump(trainer_list, f)
-
-
 class IdTrainer(commands.UserConverter):
     """
     Convert user id to Trainer object
     """
+
     async def convert(self, ctx, argument):
         user = await super().convert(ctx, argument)
         for i in trainer_list:
@@ -496,6 +501,7 @@ class IdEmoji(commands.Converter):
     """
     Convert Emoji index number to emoji
     """
+
     async def convert(self, ctx, argument: int):
         return copy.deepcopy(emoji_list[argument])
 
