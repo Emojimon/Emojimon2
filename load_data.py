@@ -2,7 +2,6 @@ import pickle
 import json
 from emojimon import Emoji, move, Trainer
 
-
 """
 This whole file is dedicated to changing values in the files
 """
@@ -52,9 +51,8 @@ def pickle_2_json():
     with open("CompleteEmojiDex.dat", "rb") as f:
         data_dict = pickle.load(f)
 
-    #with open("emoji_data.json", "w") as f:
+    # with open("emoji_data.json", "w") as f:
 
 
 if __name__ == '__main__':
     check_data()
-
