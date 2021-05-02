@@ -8,52 +8,6 @@ from discord.ext import commands
 import discord
 import copy
 
-# Data, the following code is necessary only for a discord client
-with open("CompleteEmojiDex.dat", "rb") as f:
-    emoji_list = pickle.load(f)
-
-with open("TrainerList.dat", "rb") as f:
-    trainer_list = pickle.load(f)
-
-with open("CompleteMoveList.dat", "rb") as f:
-    moveListTemp = pickle.load(f)
-
-with open("TypeChart2dArray.dat", "rb") as f:
-    newData = pickle.load(f)
-
-
-def emoji_finder(index):
-    return copy.deepcopy(emoji_list(index))
-
-
-def trainer_finder(id: int):
-    for i in trainer_list:
-        if i.id == id:
-            return i
-        else:  # No player was found
-            return None
-
-
-def emojiList():
-    return emoji_list
-
-
-def trainerList():
-    return trainer_list
-
-
-def moveList():
-    return moveListTemp
-
-
-def typeChart():
-    return newData
-
-
-def save_game():
-    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-        pickle.dump(trainer_list, f)
-
 
 class move:
     moveName = ""
@@ -181,6 +135,21 @@ class Emoji:
         self.specialDefStat = int(self.level * self.speDefGain * self.speDefGene)
         self.speedStat = int(self.level * self.speGain * self.speGene)
 
+    def reset_battle(self, endurance: bool):
+        """
+        Reset the mod stats for emojis when it gets in a new battle
+        :param endurance: if it is an endurance battle, HP will not be resetted
+        :return:
+        """
+        if not endurance:
+            self.currentHp = self.maxHp
+        self.attackMod = 1.0
+        self.defenseMod = 1.0
+        self.specialAttackMod = 1.0
+        self.specialDefenseMod = 1.0
+        self.speedMod = 1.0
+        self.dodgeMod = 1.0
+
     def add_xp(self, exp, battle: bool, win: bool):
         """
         Does exactly what it says in the name
@@ -199,16 +168,16 @@ class Emoji:
             return f'{self.name} has leveled up to level {self.level}!'
         if not battle:
             return f'{self.name} has gained {exp} XP'
-        if win:
-            return f'{self.name} has won the fight and escaped PTSD, *for now*'
         else:
-            return f'{self.name} has gained {exp} XP'
+            if win:
+                return f'{self.name} has won the fight and escaped PTSD, *for now*'
+            else:
+                return f'{self.name} has gained {exp} XP'
 
     def level_up(self):
         """
         Deals with leveling up the emoji, involving raise level by one, as well as maybe improve stats
         and learn new moves
-        todo: implement stat change
         """
         self.level += 1
         for move_name in self.moveLearnDictionary.items():
@@ -292,6 +261,14 @@ class Emoji:
             msg += "\n"
 
         return msg
+
+
+with open("CompleteEmojiDex.dat", "rb") as f:
+    emoji_list = pickle.load(f)
+
+
+def emoji_finder(index):
+    return copy.deepcopy(emoji_list[index])
 
 
 class Trainer:
@@ -483,6 +460,48 @@ class Trainer:
         return self.team[index]
 
 
+# Data, the following code is necessary only for a discord client
+
+
+with open("TrainerList.dat", "rb") as f:
+    trainer_list = pickle.load(f)
+
+with open("CompleteMoveList.dat", "rb") as f:
+    moveListTemp = pickle.load(f)
+
+with open("TypeChart2dArray.dat", "rb") as f:
+    newData = pickle.load(f)
+
+
+def trainer_finder(id: int):
+    for i in trainer_list:
+        print(i.id, id)
+        if i.id == id:
+            return i
+    return None
+
+
+def emojiList():
+    return emoji_list
+
+
+def trainerList():
+    return trainer_list
+
+
+def moveList():
+    return moveListTemp
+
+
+def typeChart():
+    return newData
+
+
+def save_game():
+    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
+        pickle.dump(trainer_list, f)
+
+
 class IdTrainer(commands.UserConverter):
     """
     Convert user id to Trainer object
@@ -513,5 +532,4 @@ if __name__ == '__main__':
     with open('TrainerList.dat', 'rb') as f:
         trainer_list = pickle.load(f)
 
-    for trainer in trainer_list:
-        print(trainer.profile())
+    print(trainer_finder(369217110410526722))
