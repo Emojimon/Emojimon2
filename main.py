@@ -8,7 +8,7 @@ from datetime import datetime
 from emojimon import *
 from utils import *
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.rzUEsTACb5LSGYmfc6q-LRO78qQ'
+TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.GCXZ12qOw-KOM4RWruRItICUpAM'
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -151,7 +151,7 @@ async def ping(ctx):
 
 @client.command()
 @commands.dm_only()
-async def reset_account(ctx):
+async def reset_bruh (ctx):
     try:
         trainer_finder(ctx.author.id).reset()
         await ctx.send("Your account has been resetted")
