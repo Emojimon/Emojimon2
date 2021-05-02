@@ -1,5 +1,7 @@
 import asyncio
 from discord.ext import commands
+from discord.ext.commands import BucketType
+
 from emojimon import *
 from utils import *
 
@@ -15,8 +17,11 @@ class Battle(commands.Cog):
         self.defender = Trainer
         self.challengeEmoji = Emoji
         self.defendEmoji = Emoji
+        self.winner = Trainer
+        self.loserEmoji = Emoji
 
     @commands.command()
+    @commands.max_concurrency(2, BucketType.guild)
     async def battle(self, ctx, challenger: IdTrainer, defender: IdTrainer):
         self.challenger = challenger
         self.defender = defender
@@ -24,7 +29,7 @@ class Battle(commands.Cog):
         if challenger is None or defender is None:
             await ctx.send("Sorry, you're not part of a club yet.\n "
                            "||But now you will, this is a forced initiation sucka||")
-            await trainer_init(ctx, ctx.author, trainer_list, trainer_id_list, emoji_list)
+            await trainer_init(ctx, ctx.author)
 
         # Setup for battle
         msg = await ctx.send(f" {challenger.name}, please pick your battle emoji:\n"
@@ -35,7 +40,7 @@ class Battle(commands.Cog):
 
         i1 = await select_one_from_list(self.client, ctx, self.client.get_user(challenger.id), [0, 1, 2, 3],
                                         selection_message=msg)
-        self.challengeEmoji = copy.deepcopy(challenger.team[i1])
+        self.challengeEmoji = challenger.team[i1]
 
         msg = await ctx.send(f"{defender.name}, please pick your battle emoji:\n"
                              f"0: {challenger.team[0]}\n"
@@ -45,11 +50,7 @@ class Battle(commands.Cog):
 
         i2 = await select_one_from_list(self.client, ctx, self.client.get_user(defender.id), [0, 1, 2, 3],
                                         selection_message=msg)
-        self.defendEmoji = copy.deepcopy(defender.team[i2])
-
-        # Reset emojis' hp
-        self.challengeEmoji.currentHp = self.challengeEmoji.maxHp
-        self.defendEmoji.currentHp = self.defendEmoji.maxHp
+        self.defendEmoji = defender.team[i2]
 
         # Introductions
         msg = await ctx.send(f"Battle's starting! {str(self.challenger)} has summoned {self.challengeEmoji.name}")
@@ -68,11 +69,17 @@ class Battle(commands.Cog):
         await msg.delete()
         await image.delete()
         await self.battle_loop(ctx)
+        await self.reward(ctx)
+        save_game()
 
     async def battle_loop(self, ctx):
         """
         The main battle loop of the game
         """
+        # Reset emojis' mod stats
+        self.defendEmoji.reset_battle(False)
+        self.challengeEmoji.reset_battle(False)
+
         while not await self.gameOver(ctx):
             # Index num of the emojis
             emoji_order = [self.challengeEmoji, self.defendEmoji]
@@ -104,22 +111,38 @@ class Battle(commands.Cog):
                 # Calculate and do damage
                 calc = effect_check(emoji_order[i], emoji_order[(i + 1) % 2], move_order[i])
                 emoji_order[(i + 1) % 2].currentHp -= calc[1]
+                emoji_order[i].currentHp += calc[2]
                 await ctx.send(
                     f"The move {calc[0]}, dealt {calc[1]} damage. {emoji_order[(i + 1) % 2].name} has "
                     f"{emoji_order[(i + 1) % 2].currentHp} hp left"
                 )
 
-    async def reward(self, emoji: Emoji):
-        pass
+    async def reward(self, ctx):
+        for e in self.winner.team:
+            if e is self.challengeEmoji or self.defendEmoji:
+                await ctx.send(
+                    f"{str(self.winner)}'s {e.add_xp(self.loserEmoji.level, True, True)}")
+            else:
+                await ctx.send(
+                    f"{str(self.winner)}'s {e.add_xp(self.loserEmoji.level, False, False)}"
+                )
 
     async def gameOver(self, ctx):
         if self.defendEmoji.currentHp <= 0:
             await ctx.send(f"{self.defendEmoji.name} has fallen into depression.\n"
                            f"{str(self.challenger)} wins the battle.")
+            self.winner = self.challenger
+            self.loserEmoji = self.defendEmoji
+            self.challenger.add_w()
+            self.defender.add_l()
             return True
         if self.challengeEmoji.currentHp <= 0:
             await ctx.send(f"{self.challengeEmoji.name} has fallen into depression.\n"
                            f"{str(self.defender)} wins the battle.")
+            self.winner = self.defender
+            self.loserEmoji = self.challengeEmoji
+            self.challenger.add_l()
+            self.defender.add_w()
             return True
         else:
             return False
