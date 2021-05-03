@@ -21,6 +21,7 @@ class Battle(commands.Cog):
         self.loserEmoji = Emoji
 
     @commands.command()
+    @commands.guild_only()
     @commands.max_concurrency(2, BucketType.guild)
     async def battle(self, ctx, challenger: IdTrainer, defender: IdTrainer):
         self.challenger = challenger
@@ -29,7 +30,7 @@ class Battle(commands.Cog):
         if challenger is None or defender is None:
             await ctx.send("Sorry, you're not part of a club yet.\n "
                            "||But now you will, this is a forced initiation sucka||")
-            await trainer_init(ctx, ctx.author)
+            await trainer_init(ctx, self.client, ctx.author)
 
         # Setup for battle
         msg = await ctx.send(f" {challenger.name}, please pick your battle emoji:\n"
@@ -68,6 +69,7 @@ class Battle(commands.Cog):
         await asyncio.sleep(3)
         await msg.delete()
         await image.delete()
+
         await self.battle_loop(ctx)
         await self.reward(ctx)
         save_game()
@@ -112,6 +114,8 @@ class Battle(commands.Cog):
                 calc = effect_check(emoji_order[i], emoji_order[(i + 1) % 2], move_order[i])
                 emoji_order[(i + 1) % 2].currentHp -= calc[1]
                 emoji_order[i].currentHp += calc[2]
+                if calc[3]:
+                    emoji_order[i].battle_moves.remove(move_order[i])
                 await ctx.send(
                     f"The move {calc[0]}, dealt {calc[1]} damage. {emoji_order[(i + 1) % 2].name} has "
                     f"{emoji_order[(i + 1) % 2].currentHp} hp left"
