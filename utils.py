@@ -59,7 +59,7 @@ async def select_one_from_list(client, messageable, author, lst, emojis=None, se
     return selected
 
 
-async def trainer_init(ctx, user):
+async def trainer_init(ctx, client, user):
     """
     Handles trainer sign up
     :param ctx: the context parameter (this is the discord server, not the user's dm)
@@ -71,7 +71,7 @@ async def trainer_init(ctx, user):
     trainer_list = trainerList()
 
     if trainer_finder(user.id) is not None:
-        user.send("You already are a trainer, how much cocaine did you smoke today? Shoo! Get the fuck out.")
+        await user.send("You already are a trainer, how much cocaine did you smoke today? Shoo! Get the fuck out.")
         return
 
     reactions = ["👍", "👎"]
@@ -83,13 +83,13 @@ async def trainer_init(ctx, user):
     # 1 is a great tank wizard, best for punishing glass cannons challenger, however, it evolves into shit
 
     msg = await user.send(f"{user.name}, you are not currently a trainer, do you want to join?")
-    answer = await select_one_from_list(user, user, responses, reactions, selection_message=msg)
+    answer = await select_one_from_list(client, user, user, responses, reactions, selection_message=msg)
     if answer == "yes":
         msg = await user.send(f"Please pick your starter emoji:\n"
                               f"0: {starter_emojis[0]}\n"
                               f"1: {starter_emojis[1]}\n"
                               f"2: {starter_emojis[2]}\n")
-        emoji_picked = await select_one_from_list(user, user, starter_emojis, selection_message=msg)
+        emoji_picked = await select_one_from_list(client, user, user, starter_emojis, selection_message=msg)
         trainer = Trainer(user.id, user.name, emoji_picked, datetime.now().strftime("%x"))
         trainer_list.append(trainer)
 
@@ -216,7 +216,7 @@ def heal_calc(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
         return msg, 0, round(heal), True
     if healType is '3':  # Like 1 but only heals 10% max and also damages opponents by half of what it should be
         heal = random.uniform(0.0, moveDam / 100) * 0.1 * attackingEmoji.maxHp
-        dmg = damage_calculation(attackingEmoji, defendingEmoji, movesName)/2
+        dmg = damage_calculation(attackingEmoji, defendingEmoji, movesName)[1]/2
         msg = f'healed {attackingEmoji.name} by {round(heal)} hp'
         return msg, dmg, round(heal), False
     if healType is '4':  # Gamble, either heal a flat rate of 50% (once) or get damaged based on what it would be by def
