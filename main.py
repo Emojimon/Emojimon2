@@ -8,7 +8,7 @@ from datetime import datetime
 from emojimon import *
 from utils import *
 
-TOKEN = 'NzY5NTUxMTc3NjAzNzQzNzU0.X5QqYg.GCXZ12qOw-KOM4RWruRItICUpAM'
+TOKEN = ''
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
@@ -151,7 +151,7 @@ async def ping(ctx):
 
 @client.command()
 @commands.dm_only()
-async def reset_bruh (ctx):
+async def reset_account(ctx):
     try:
         trainer_finder(ctx.author.id).reset()
         await ctx.send("Your account has been resetted")
@@ -177,7 +177,7 @@ async def new_trainer(ctx):
     """
     Adds new trainer to the game
     """
-    await trainer_init(ctx, ctx.author)
+    await trainer_init(ctx, client, ctx.author)
 
 
 @client.command()
@@ -188,7 +188,7 @@ async def check_move(ctx, emoji_name=""):
     except KeyError:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, ctx.author)
+        await trainer_init(ctx, client, ctx.author)
 
     while True:
         team = ', '.join([str(i) for i in trainer.team])
@@ -227,6 +227,9 @@ async def learn_move(ctx, emoji_name=""):
             else:
                 break
 
+        if not trainer.team[index].movePool:
+            await ctx.send(f"{trainer.team[index].name} doesn't have any moves to learn")
+            break
         msg = await ctx.author.send("Choose the move you want to learn. "
                                     "Learned moves cannot be learned a second time, so choose wisely\n"
                                     "No pressure")
@@ -242,7 +245,7 @@ async def learn_move(ctx, emoji_name=""):
                                     f"1: {trainer.team[index].move2}\n"
                                     f"2: {trainer.team[index].move3}\n"
                                     f"3: {trainer.team[index].move4}\n")
-        replace = await select_one_from_list(client, ctx.author, ctx.author, [0, 1, 2, 3], selection_message=msg)
+        replace = await select_one_from_list(client, ctx.author, ctx.author, [0, 1, 2, 3, 4], selection_message=msg)
         if replace == 0:
             trainer.team[index].move1 = answer
             trainer.team[index].movePool.remove(answer)
@@ -258,6 +261,12 @@ async def learn_move(ctx, emoji_name=""):
         if replace == 3:
             trainer.team[index].move4 = answer
             trainer.team[index].movePool.remove(answer)
+
+        if replace == 4:
+            msg = await ctx.author.send("The curse have been broken, I have been freed from my duties")
+            await asyncio.sleep(1)
+            await msg.delete()
+            break
 
         msg = await ctx.author.send("Do you want to teach your team moves again?")
         if await select_one_from_list(client, ctx, ctx.author, [True, False], ['👍', '👎'], msg):
@@ -390,7 +399,7 @@ async def battle_challenge(ctx, target):
     if ctx.author.id not in trainer_id_list:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, ctx.author)
+        await trainer_init(ctx, client, ctx.author)
 
     try:
         user = client.get_user(int(''.join([i for i in target if i.isdigit()])))
@@ -405,7 +414,7 @@ async def battle_challenge(ctx, target):
     if user.id not in trainer_id_list:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
-        await trainer_init(ctx, user)
+        await trainer_init(ctx, client, user)
 
     await ctx.send(f"{ctx.author.name} has challenged {user.name} to a battle.")
     msg = await user.send(f'{ctx.author.name} has challenged you to a battle. Do you accept?')
