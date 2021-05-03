@@ -83,6 +83,8 @@ class Emoji:
     move2 = ""
     move3 = ""
     move4 = ""
+    # The moves available in the battle
+    battle_moves = []
 
     def __init__(self, indexNum):
         self.emojiNumber = indexNum
@@ -123,6 +125,7 @@ class Emoji:
         self.movePool = []
 
         self.xp = [0, int(self.level ** 1.2)]
+        self.battle_moves = [self.move1, self.move2, self.move3, self.move4]
 
     def __str__(self):
         return self.name
@@ -141,6 +144,7 @@ class Emoji:
         :param endurance: if it is an endurance battle, HP will not be resetted
         :return:
         """
+        print("Resetted")
         if not endurance:
             self.currentHp = self.maxHp
         self.attackMod = 1.0
@@ -149,6 +153,7 @@ class Emoji:
         self.specialDefenseMod = 1.0
         self.speedMod = 1.0
         self.dodgeMod = 1.0
+        self.battle_moves = [self.move1, self.move2, self.move3, self.move4]
 
     def add_xp(self, exp, battle: bool, win: bool):
         """
@@ -475,7 +480,6 @@ with open("TypeChart2dArray.dat", "rb") as f:
 
 def trainer_finder(id: int):
     for i in trainer_list:
-        print(i.id, id)
         if i.id == id:
             return i
     return None
@@ -512,8 +516,8 @@ class IdTrainer(commands.UserConverter):
         for i in trainer_list:
             if i.id == user.id:
                 return i
-            else:  # No player was found
-                return None
+
+        return None
 
 
 class IdEmoji(commands.Converter):
