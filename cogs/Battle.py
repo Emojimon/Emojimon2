@@ -22,8 +22,12 @@ class Battle(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 60.0, BucketType.guild)
     @commands.max_concurrency(2, BucketType.guild)
     async def battle(self, ctx, challenger: IdTrainer, defender: IdTrainer):
+        """
+        Tag 2 combatants to initiate combat (must be consensual, misuse will be dealt with)
+        """
         self.challenger = challenger
         self.defender = defender
 
@@ -44,10 +48,10 @@ class Battle(commands.Cog):
         self.challengeEmoji = challenger.team[i1]
 
         msg = await ctx.send(f"{defender.name}, please pick your battle emoji:\n"
-                             f"0: {challenger.team[0]}\n"
-                             f"1: {challenger.team[1]}\n"
-                             f"2: {challenger.team[2]}\n"
-                             f"3: {challenger.team[3]}")
+                             f"0: {defender.team[0]}\n"
+                             f"1: {defender.team[1]}\n"
+                             f"2: {defender.team[2]}\n"
+                             f"3: {defender.team[3]}")
 
         i2 = await select_one_from_list(self.client, ctx, self.client.get_user(defender.id), [0, 1, 2, 3],
                                         selection_message=msg)
@@ -130,6 +134,17 @@ class Battle(commands.Cog):
                 await ctx.send(
                     f"{str(self.winner)}'s {e.add_xp(self.loserEmoji.level, False, False)}"
                 )
+            if e.check_evolve():
+                # Level will be saved, og name is for the announcement
+                ogname = e.name
+                level = e.level
+                await ctx.send(f"What's this? {e.name} is having a seizure?!")
+
+                e = emoji_list[e.emojiNumber + 1]
+                e.level = level
+                await ctx.send(f"{ogname} has ascended into a {e.name}. "
+                               "You'll also be delighted to know that its tax exemption has also been removed"
+                               )
 
     async def gameOver(self, ctx):
         if self.defendEmoji.currentHp <= 0:

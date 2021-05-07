@@ -53,17 +53,23 @@ async def on_ready():
 @client.command()
 @commands.is_owner()
 async def begin_hunt(ctx):
-    """Does exactly what it says: starting the spawn loop
     """
-    spawn_loop.start()
+    Does exactly what it says: starting the spawn loop.
+    Only Khoa can use this
+    """
+    if ctx.channel.name is not "🥊》emojimon-battle":
+        return
+    spawn_loop.start(ctx)
 
 
 @client.command()
 @commands.is_owner()
 async def spotted(ctx):
-    """A testing function for spawning to make sure bot is working as intended
     """
-    await spawn()
+    A testing function for spawning to make sure bot is working as intended.
+    Only Khoa can use this.
+    """
+    await spawn(ctx)
 
 
 @client.command()
@@ -72,7 +78,9 @@ async def spotted(ctx):
 @commands.max_concurrency(1, BucketType.guild)
 async def guess(ctx):
     """
-    Good ol' guess the pokemon, but your soul is on the line
+    Good ol' guess the pokemon, but your soul is on the line.
+    There can only be 1 game per server, and a person can only use this twice every 10 seconds
+    (might be increased if abused)
     """
 
     server = ctx.message.guild
@@ -80,7 +88,7 @@ async def guess(ctx):
 
     await ctx.message.delete()
 
-    msg1 = await ctx.send("Time for guess the pokemon!")
+    msg1 = await ctx.send("Time for guess the pokemon! Remember, your soul is on the line!")
     msg = await ctx.send(file=discord.File(
         fp=guess_poke(
             f'https://cdn.discordapp.com/emojis/{emoji.id}.png'),
@@ -113,12 +121,18 @@ async def guess(ctx):
 
 @client.command()
 async def command_help(ctx):
+    """
+    Specific uses of commands (work in progress)
+    """
     with open("help_message", 'r') as f:
         await ctx.send(f.read())
 
 
 @client.command()
 async def stat_help(ctx):
+    """
+    How to understand the emojidex (emojidex will be released later)
+    """
     with open("stat_help", 'r') as f:
         await ctx.send(f.read())
 
@@ -152,6 +166,9 @@ async def ping(ctx):
 @client.command()
 @commands.dm_only()
 async def reset_account(ctx):
+    """
+    Does exactly what it says
+    """
     try:
         trainer_finder(ctx.author.id).reset()
         await ctx.send("Your account has been resetted")
@@ -164,6 +181,9 @@ async def reset_account(ctx):
 @client.command()
 @commands.dm_only()
 async def account(ctx):
+    """
+    Check your account
+    """
     trainer = trainer_finder(ctx.author.id)
     if trainer is None:
         await ctx.send(
@@ -175,7 +195,7 @@ async def account(ctx):
 @client.command()
 async def new_trainer(ctx):
     """
-    Adds new trainer to the game
+    Adds new trainer to the game (if you're not already a trainer)
     """
     await trainer_init(ctx, client, ctx.author)
 
@@ -183,6 +203,9 @@ async def new_trainer(ctx):
 @client.command()
 @commands.dm_only()
 async def check_move(ctx, emoji_name=""):
+    """
+    Look at the stats of a certain move
+    """
     try:
         trainer = trainer_finder(ctx.author.id)
     except KeyError:
@@ -216,6 +239,9 @@ async def check_move(ctx, emoji_name=""):
 @client.command()
 @commands.dm_only()
 async def learn_move(ctx, emoji_name=""):
+    """
+    Have your emojis learn moves. If done accidentally, leave it for 20 seconds
+    """
     trainer = trainer_finder(ctx.author.id)
     while True:
         team = ', '.join([str(i) for i in trainer.team])
@@ -285,6 +311,9 @@ async def learn_move(ctx, emoji_name=""):
 @client.command()
 @commands.dm_only()
 async def emoji_team(ctx):
+    """
+    Look at stats of emojis
+    """
     trainer = trainer_finder(ctx.author.id)
 
     if trainer is None:
@@ -309,20 +338,14 @@ async def spawn_loop():
         pass
 
 
-async def spawn():
+async def spawn(ctx):
     """
     Responsible for spawning a pokemon. Spawn windows starts every 10 seconds for testing purposes.
     """
-    global trainer_list
-    global trainer_id_list
-    global emoji_list
+    channel = ctx.channel
+    pokeball = "pokeball:769571475061473302"
 
-    channel = client.get_channel(746939037297934426)
-    pokeball = client.get_emoji(769571475061473302)
-
-    trainer_id_list = [i.id for i in trainer_list]
-
-    emoji = random.choice(emoji_list)
+    emoji = random.choice(emojiList())
 
     embed_item = discord.Embed(
         title=f"A wild {emoji.name} has appeared", description="Catch it",
@@ -339,8 +362,8 @@ async def spawn():
 
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=5.0, check=check1)
-        trainer = trainer_list[trainer_id_list.index(user.id)]
-        if user.id in trainer_id_list:
+        trainer = trainer_finder(user.id)
+        if trainer is not None:
             await msg.delete()
             await user.send('You got the pokemon, you\'re now responsible for its taxes')
             await channel.send(f'{user.name} has caught the pokemon')
@@ -377,8 +400,10 @@ async def spawn():
 
 @client.command()
 @commands.guild_only()
+@commands.is_owner()
+@commands.cooldown(1, 10.0, BucketType.guild)
 @commands.max_concurrency(2, BucketType.guild)
-async def battle_challenge(ctx, target):
+async def battle_challenge(ctx, target: IdTrainer):
     """
     Command for challenging another user
     :param ctx: context parameter
@@ -386,17 +411,15 @@ async def battle_challenge(ctx, target):
     todo: Restrict player from challenging self (unless if that player is me, because bug testing duh)
     todo: Add restrictions to ability usage
     """
-    global trainer_id_list
-    global trainer_list
-    global emoji_list
     global local_time
 
     reactions = ["👍", "👎"]
     responses = ["yes", "no"]
 
-    trainer_id_list = [i.id for i in trainer_list]
+    challenger = trainer_finder(ctx.author.id)
+    defender = target
 
-    if ctx.author.id not in trainer_id_list:
+    if challenger is None:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
         await trainer_init(ctx, client, ctx.author)
@@ -411,7 +434,7 @@ async def battle_challenge(ctx, target):
         await ctx.send("No you dumbass I'm the referee not the player")
         return
 
-    if user.id not in trainer_id_list:
+    if defender is None:
         await ctx.send("Sorry, you're not part of a club yet.\n "
                        "||But now you will, this is a forced initiation sucka||")
         await trainer_init(ctx, client, user)
@@ -421,8 +444,8 @@ async def battle_challenge(ctx, target):
 
     answer = await select_one_from_list(client, user, user, responses, emojis=reactions, selection_message=msg)
     if answer == responses[0]:
-        await battle(ctx, trainer_list[trainer_id_list.index(ctx.author.id)],
-                     trainer_list[trainer_id_list.index(user.id)])
+        await battle(ctx, challenger,
+                     defender)
     elif answer == responses[1]:
         await ctx.send(f'{user.name} has turned down the challenge.')
 
@@ -632,6 +655,9 @@ async def battle(ctx, challenger, challenged):
 @client.command()
 @commands.is_owner()
 async def give_role(ctx, user: discord.User, role: str):
+    """
+    Give someone a title that will be displayed in combat
+    """
     t_user = trainer_finder(user.id)
     t_user.assign_role(role, True)
     await ctx.send(f"User {user.name} has been granted the title/role of {role}")

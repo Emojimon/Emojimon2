@@ -131,7 +131,7 @@ def damage_calculation(attackingEmoji: Emoji, defendingEmoji: Emoji, movesName):
     :param attackingEmoji:
     :param defendingEmoji:
     :param movesName:
-    :return: the effectiveness of the attack, as well as damage output
+    :return: [effects, damage, heals, whether the move is single use]
     todo: rebalance
     """
     moveListTemp = moveList()
