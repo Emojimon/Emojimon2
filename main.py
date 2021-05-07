@@ -8,7 +8,7 @@ from datetime import datetime
 from emojimon import *
 from utils import *
 
-TOKEN = ''
+TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 client = commands.Bot(command_prefix='!em')
 emoji_list = []
