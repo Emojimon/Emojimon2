@@ -51,8 +51,9 @@ def pickle_2_json():
     with open("CompleteEmojiDex.dat", "rb") as f:
         data_dict = pickle.load(f)
 
-    # with open("emoji_data.json", "w") as f:
+    with open("emoji_data.json", "w") as f:
+        json.dump([i.__dict__ for i in data_dict], f, indent=4)
 
 
 if __name__ == '__main__':
-    check_data()
+    pickle_2_json()
