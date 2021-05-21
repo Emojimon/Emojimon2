@@ -321,8 +321,8 @@ class Trainer:
         if isinstance(args[0], dict):
             self.__dict__ = args[0]
             self.beginner_emoji = Emoji(self.beginner_emoji)
-            for i in self.team:
-                i = Emoji(i)
+            for i in range(4):
+                self.team[i] = Emoji(self.team[i])
 
         elif len(args) == 4:
             self.new_trainer(args[0], args[1], args[2], args[3])
@@ -557,11 +557,7 @@ class IdTrainer(commands.UserConverter):
 
     async def convert(self, ctx, argument):
         user = await super().convert(ctx, argument)
-        for i in trainer_list:
-            if i.id == user.id:
-                return i
-
-        return None
+        return trainer_finder(user.id)
 
 
 class IdEmoji(commands.Converter):
@@ -570,8 +566,10 @@ class IdEmoji(commands.Converter):
     """
 
     async def convert(self, ctx, argument: int):
-        return copy.deepcopy(emoji_list[argument])
+        emoji = mycol.find_one({"emojiNumber": 0})
+        return Emoji(emoji)
 
 
 if __name__ == '__main__':
-    pass
+    trainer = trainer_finder(434919971165044736)
+    print(trainer.stats())
