@@ -323,6 +323,9 @@ class Trainer:
             self.beginner_emoji = Emoji(self.beginner_emoji)
             for i in range(len(self.team)):
                 self.team[i] = Emoji(self.team[i])
+            if len(self.team) < 4:
+                for x in range(4-len(self.team)):
+                    self.team.append(None)
 
         elif len(args) == 4:
             self.new_trainer(args[0], args[1], args[2], args[3])
@@ -571,5 +574,5 @@ class IdEmoji(commands.Converter):
 
 
 if __name__ == '__main__':
-    trainer = trainer_finder(434919971165044736)
-    print(trainer.stats())
+    trainer = trainer_finder(515953854181801986)
+    print(trainer.team)
