@@ -214,7 +214,7 @@ class Emoji:
         self.recalculateStats()
 
     def check_evolve(self):
-        if self.level >= self.evolutionLevel and self.evolution is not None:
+        if self.level >= self.evolutionLevel and self.evolution is not "":
             return True
         return False
 
