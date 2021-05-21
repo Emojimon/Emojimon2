@@ -321,7 +321,7 @@ class Trainer:
         if isinstance(args[0], dict):
             self.__dict__ = args[0]
             self.beginner_emoji = Emoji(self.beginner_emoji)
-            for i in range(4):
+            for i in range(len(self.team)):
                 self.team[i] = Emoji(self.team[i])
 
         elif len(args) == 4:
