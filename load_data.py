@@ -1,6 +1,7 @@
+from emojimon import *
+import copy
 import pickle
 import json
-from emojimon import Emoji, move, Trainer
 
 """
 This whole file is dedicated to changing values in the files
@@ -54,6 +55,23 @@ def pickle_2_json():
     with open("emoji_data.json", "w") as f:
         json.dump([i.__dict__ for i in data_dict], f, indent=4)
 
+def trainer_update():
+    with open('trainers_data.json', 'w') as f:
+        json.dump([encode(i) for i in trainerList()], f, indent=4)
+
 
 if __name__ == '__main__':
-    pickle_2_json()
+    def encode(obj: Trainer):
+        cls_dict = copy.deepcopy(obj.__dict__)
+        for key, value in cls_dict.items():
+            if isinstance(value, Emoji):
+                cls_dict[key] = copy.deepcopy(value.__dict__)
+            elif isinstance(value, list) and not not value:
+                if isinstance(value[0], Emoji):
+                    cls_dict[key] = [copy.deepcopy(i.__dict__) for i in value if isinstance(i, Emoji)]
+        return cls_dict
+
+    clsdict = encode(trainerList()[0])
+    trainer = Trainer(clsdict)
+    print(type(trainer.beginner_emoji))
+
