@@ -15,6 +15,21 @@ from matplotlib.spines import Spine
 from matplotlib.transforms import Affine2D
 
 
+def encode(obj: Trainer):
+    """
+    Encode Trainer object to serialize to JSON
+    :param obj: Trainer object
+    :return: a dictionary of attributes compatible with JSON
+    """
+    cls_dict = copy.deepcopy(obj.__dict__)
+    for key, value in cls_dict.items():
+        if isinstance(value, Emoji):
+            cls_dict[key] = copy.deepcopy(value.__dict__)
+        elif isinstance(value, list) and not not value:
+            if isinstance(value[0], Emoji):
+                cls_dict[key] = [copy.deepcopy(i.__dict__) for i in value if isinstance(i, Emoji)]
+    return cls_dict
+
 async def select_one_from_list(client, messageable, author, lst, emojis=None, selection_message=None):
     """
     Lets a discord user select an item from a list using reactions.

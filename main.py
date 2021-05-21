@@ -29,16 +29,6 @@ async def on_ready():
     global local_time
     global moveListTemp
 
-    with open("CompleteEmojiDex.dat", "rb") as f:
-        emoji_list = pickle.load(f)
-
-    with open("TrainerList.dat", "rb") as f:
-        trainer_list = pickle.load(f)
-
-    with open("CompleteMoveList.dat", "rb") as f:
-        moveListTemp = pickle.load(f)
-
-    trainer_id_list = [i.id for i in trainer_list]
     local_time = datetime.now()
 
     # Load modules
@@ -111,7 +101,7 @@ async def guess(ctx):
             acv = trainer.guess_score()
             if acv is not None:
                 await ctx.send(f"{user.name} has earned the achievement: {acv}")
-            save_game()
+            save_game(user.id, encode(trainer))
     except asyncio.TimeoutError:
         await msg.delete()
         msg = await ctx.send('Oh well, guess y\'all just dumb')
@@ -170,9 +160,10 @@ async def reset_account(ctx):
     Does exactly what it says
     """
     try:
-        trainer_finder(ctx.author.id).reset()
+        trainer = trainer_finder(ctx.author.id)
+        trainer.reset()
         await ctx.send("Your account has been resetted")
-        save_game()
+        save_game(ctx.author.id, encode(trainer))
     except AttributeError:
         await ctx.send(
             "You are not a trainer dummy, if anything, the only thing you need to factory reset is your brain")
@@ -305,7 +296,7 @@ async def learn_move(ctx, emoji_name=""):
             await msg.delete()
             break
 
-    save_game()
+    save_game(trainer.id, encode(trainer))
 
 
 @client.command()
@@ -384,8 +375,7 @@ async def spawn(ctx):
             if team_add[1] is not None:
                 await channel.send(f"{user.name} has earned the achievement {team_add[1]}")
 
-            with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-                pickle.dump(trainer_list, f)
+            save_game(trainer.id, {"team": trainer.team})
 
         else:
             await reaction.message.channel.send('Oops, it looks like you\'re not a trainer yet, and thus not qualified '
@@ -592,8 +582,8 @@ async def battle(ctx, challenger, challenged):
             if acv is not None:
                 await ctx.send(f"{challenged.name} has earned the achievement: {acv}")
 
-            with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-                pickle.dump(trainer_list, f)
+            save_game(challenger.id, encode(challenger))
+            save_game(challenged.id, encode(challenged))
 
             break
         await asyncio.sleep(3)
@@ -645,8 +635,8 @@ async def battle(ctx, challenger, challenged):
             if acv is not None:
                 await ctx.send(f"{challenged.name} has earned the achievement: {acv}")
 
-            with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-                pickle.dump(trainer_list, f)
+            save_game(challenger.id, encode(challenger))
+            save_game(challenged.id, encode(challenged))
             break
         await asyncio.sleep(3)
         await image.delete()
@@ -659,9 +649,9 @@ async def give_role(ctx, user: discord.User, role: str):
     Give someone a title that will be displayed in combat
     """
     t_user = trainer_finder(user.id)
-    t_user.assign_role(role, True)
+    save_game(user.id, {"role": role})  # Using the method Trainer.assign_role()
+    # and then update the doc will do the trick as well
     await ctx.send(f"User {user.name} has been granted the title/role of {role}")
-    save_game()
 
 
 client.run(TOKEN)

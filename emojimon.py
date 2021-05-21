@@ -7,7 +7,17 @@ from PIL import Image, ImageEnhance
 from discord.ext import commands
 import discord
 import copy
+import json
+from pymongo import MongoClient
+import certifi
 
+"""Mongodb"""
+client = MongoClient(
+    "mongodb+srv://basicallyok:12102002@emojimondatabase.gn87h.mongodb.net/EmojimonDiscord?retryWrites=true&w=majority",
+    tlsCAFile=certifi.where()
+)
+mydb = client["EmojimonDiscord"]
+mycol = mydb['Trainer']
 
 class move:
     moveName = ""
@@ -19,6 +29,9 @@ class move:
 
     def __str__(self):
         return self.moveName
+
+    def __init__(self, jdict):
+        self.__dict__ = jdict
 
     def stats(self):
         if self.moveName is None:
@@ -86,7 +99,15 @@ class Emoji:
     # The moves available in the battle
     battle_moves = []
 
-    def __init__(self, indexNum):
+    def __init__(self, argument):
+        if isinstance(argument, int):
+            self.emoji_from_index(argument)
+        elif isinstance(argument, dict):
+            self.__dict__ = argument
+        else:
+            raise ValueError('Invalid argument type')
+
+    def emoji_from_index(self, indexNum: int):
         self.emojiNumber = indexNum
         self.imageReference = "Emoji" + indexNum.__str__()
         self.name = ''
@@ -296,11 +317,24 @@ class Trainer:
     role = ''  # If it is the name of one of the emoji type, the person is a gym leader
     inventory = []
 
-    def __init__(self, discord_id: int, name: str = "Temp PLayer", beginner_emoji: Emoji = emoji_finder(1),
-                 date_started: str = "Temp Account"):
+    def __init__(self, *args):
+        if isinstance(args[0], dict):
+            self.__dict__ = args[0]
+            self.beginner_emoji = Emoji(self.beginner_emoji)
+            for i in self.team:
+                i = Emoji(i)
+
+        elif len(args) == 4:
+            self.new_trainer(args[0], args[1], args[2], args[3])
+
+        else:
+            raise ValueError("Invalid parameters")
+
+    def new_trainer(self, discord_id: int, name: str, beginner_emoji: Emoji,
+                    date_started: str):
 
         """
-        The Trainer class constructor
+        Create a new trainer
         :param name: self-explanatory
         :param discord_id:
         :param beginner_emoji: The first emoji to be used (starter pick wont take place here to allow for dev usage)
@@ -314,7 +348,6 @@ class Trainer:
         self.wins = 0
         self.losses = 0
         self.c_guess = 0
-        self.w_guess = 0
         self.emojis_caught = 0
         self.date_started = date_started
         self.id = discord_id
@@ -479,10 +512,16 @@ with open("TypeChart2dArray.dat", "rb") as f:
 
 
 def trainer_finder(id: int):
-    for i in trainer_list:
-        if i.id == id:
-            return i
-    return None
+    """
+
+    :param id:
+    :return:
+    """
+    trainer_doc = mycol.find_one({"id": id})
+    if not trainer_doc:
+        return None
+    else:
+        return Trainer(trainer_doc)
 
 
 def emojiList():
@@ -501,9 +540,14 @@ def typeChart():
     return newData
 
 
-def save_game():
-    with open('TrainerList.dat', 'wb') as f:  # AUTOSAVES!!!
-        pickle.dump(trainer_list, f)
+def save_game(discord_id: int, new_doc: dict):
+    """
+    Update the database for the target
+    :param discord_id:
+    :param new_doc: dictionary of changes you want to make
+    :return:
+    """
+    mycol.update_one({"id": discord_id}, {"$set": new_doc})
 
 
 class IdTrainer(commands.UserConverter):
@@ -530,10 +574,4 @@ class IdEmoji(commands.Converter):
 
 
 if __name__ == '__main__':
-    with open('CompleteEmojiDex.dat', 'rb') as f:
-        data_list = pickle.load(f)
-
-    with open('TrainerList.dat', 'rb') as f:
-        trainer_list = pickle.load(f)
-
-    print(trainer_finder(369217110410526722))
+    pass

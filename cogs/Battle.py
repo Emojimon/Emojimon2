@@ -76,7 +76,10 @@ class Battle(commands.Cog):
 
         await self.battle_loop(ctx)
         await self.reward(ctx)
-        save_game()
+
+        # Save game, might take some time, need some testing
+        save_game(challenger.id, encode(challenger))
+        save_game(defender.id, encode(defender))
 
     async def battle_loop(self, ctx):
         """
