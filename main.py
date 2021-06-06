@@ -47,7 +47,7 @@ async def begin_hunt(ctx):
     Does exactly what it says: starting the spawn loop.
     Only Khoa can use this
     """
-    if ctx.channel.name is not "🥊》emojimon-battle":
+    if ctx.channel.name is not "🥊》emojimon-battle" or "debug":
         return
     spawn_loop.start(ctx)
 
@@ -322,8 +322,8 @@ async def spawn_loop():
     """
     The loop coroutine for spawning, it will have a chance of 1/6 every 10 seconds
     """
-    rand = random.randint(1, 6)
-    if rand == 6:
+    rand = random.randint(1, 2)
+    if rand == 1:
         await spawn()
     else:
         pass
