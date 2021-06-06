@@ -327,6 +327,9 @@ class Trainer:
                 for x in range(4-len(self.team)):
                     self.team.append(None)
 
+        elif len(args) == 0:
+            pass
+
         elif len(args) == 4:
             self.new_trainer(args[0], args[1], args[2], args[3])
 
@@ -543,14 +546,15 @@ def typeChart():
     return newData
 
 
-def save_game(discord_id: int, new_doc: dict):
+def save_game(discord_id: int, new_doc: dict, new=False):
     """
     Update the database for the target
-    :param discord_id:
+    :param new: whether a new document should be created if nothing is found
+    :param discord_id: self-explanatory
     :param new_doc: dictionary of changes you want to make
     :return:
     """
-    mycol.update_one({"id": discord_id}, {"$set": new_doc})
+    mycol.update_one({"id": discord_id}, {"$set": new_doc}, upsert=new)
 
 
 class IdTrainer(commands.UserConverter):
