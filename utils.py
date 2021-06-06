@@ -117,7 +117,7 @@ async def trainer_init(ctx, client, user):
         trainer.team[0].speGene = random.uniform(1, 2)
         trainer.team[0].recalculateStats()
 
-        save_game(trainer.id, encode(trainer))
+        save_game(trainer.id, encode(trainer), True)
 
         await user.send(f"Welcome to the club {user.name}.")
         await ctx.send(f"Welcome to the club {user.name}.")
