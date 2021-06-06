@@ -30,6 +30,7 @@ def encode(obj: Trainer):
                 cls_dict[key] = [copy.deepcopy(i.__dict__) for i in value if isinstance(i, Emoji)]
     return cls_dict
 
+
 async def select_one_from_list(client, messageable, author, lst, emojis=None, selection_message=None):
     """
     Lets a discord user select an item from a list using reactions.
@@ -116,7 +117,7 @@ async def trainer_init(ctx, client, user):
         trainer.team[0].speGene = random.uniform(1, 2)
         trainer.team[0].recalculateStats()
 
-        save_game()
+        save_game(trainer.id, encode(trainer))
 
         await user.send(f"Welcome to the club {user.name}.")
         await ctx.send(f"Welcome to the club {user.name}.")
