@@ -376,7 +376,7 @@ async def spawn(ctx):
             if team_add[1] is not None:
                 await channel.send(f"{user.name} has earned the achievement {team_add[1]}")
 
-            save_game(trainer.id, {"team": [t.dict for t in trainer.team if t is not None]})
+            save_game(trainer.id, {"team": [t.__dict__ for t in trainer.team if t is not None]})
 
         else:
             await reaction.message.channel.send('Oops, it looks like you\'re not a trainer yet, and thus not qualified '
