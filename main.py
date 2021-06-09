@@ -49,6 +49,7 @@ async def begin_hunt(ctx):
     """
     if ctx.channel.name is not "🥊》emojimon-battle" or "debug":
         return
+    await ctx.send("Spawning Emojis...")
     spawn_loop.start(ctx)
 
 
@@ -101,7 +102,7 @@ async def guess(ctx):
             acv = trainer.guess_score()
             if acv is not None:
                 await ctx.send(f"{user.name} has earned the achievement: {acv}")
-            save_game(user.id, encode(trainer))
+            save_game(user.id, {'c_guess': trainer.c_guess, 'achievement': trainer.achievements})
     except asyncio.TimeoutError:
         await msg.delete()
         msg = await ctx.send('Oh well, guess y\'all just dumb')
@@ -375,7 +376,7 @@ async def spawn(ctx):
             if team_add[1] is not None:
                 await channel.send(f"{user.name} has earned the achievement {team_add[1]}")
 
-            save_game(trainer.id, encode(trainer))
+            save_game(trainer.id, {"team": [t.dict for t in trainer.team if t is not None]})
 
         else:
             await reaction.message.channel.send('Oops, it looks like you\'re not a trainer yet, and thus not qualified '
