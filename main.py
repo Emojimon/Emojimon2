@@ -650,7 +650,8 @@ async def give_role(ctx, user: discord.User, role: str):
     Give someone a title that will be displayed in combat
     """
     t_user = trainer_finder(user.id)
-    save_game(user.id, {"role": role})  # Using the method Trainer.assign_role()
+    t_user.achievements.append(role)
+    save_game(user.id, {"role": role, "achievements": t_user.achievements})  # Using the method Trainer.assign_role()
     # and then update the doc will do the trick as well
     await ctx.send(f"User {user.name} has been granted the title/role of {role}")
 
